@@ -318,16 +318,22 @@ class Client:
         self.audit_log_cache[guild_id].appendleft(entry)
         return True
 
-    async def get_cached_audit_log(self, guild_id: int, action: typing.Optional[AuditLogAction], limit: typing.Optional[int]):
+    async def get_cached_audit_log(self, guild_id: int, action: typing.Optional[AuditLogAction]=None, limit: typing.Optional[int]=10) -> AsyncIterator:
         if guild_id not in self.audit_log_cache: return None
         if action:
-            entries = [i for i in self.audit_log_cache[guild_id] if i.action is action]
-            if limit: return entries[:limit]
-            else: return entries
+            entries=[i for i in self.audit_log_cache[guild_id] if i.action is action]
+            if limit:
+                for i in entries[:limit]:
+                    yield i
+            else:
+                for i in entries:
+                    yield i
         else:
             entries = [i for i in self.audit_log_cache[guild_id]]
-            if limit: return entries[:limit]
-            else: return entries
+            if limit:
+                for i in entries[:limit]: yield i
+            else:
+                for i in entries: yield i
 
     def _get_websocket(self, guild_id: Optional[int] = None, *, shard_id: Optional[int] = None) -> DiscordWebSocket:
         return self.ws
