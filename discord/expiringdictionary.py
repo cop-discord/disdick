@@ -27,7 +27,7 @@ class ExpiringDictionary:
         self.futures[key]=future
         return 1
 
-    async def remove(self,key:str,value:Any):
+    async def remove(self,key:str):
         if key in self.dict:
             try: await self.do_cancel(key)
             except: pass
