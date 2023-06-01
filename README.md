@@ -1,0 +1,1 @@
+A discord.py fork with scaling and efficiency in mind, Fixing issues with discord.py that are abuseable / exploitable, implementing caching of invalid user ids, invalid ratelimiting, and many more features.
