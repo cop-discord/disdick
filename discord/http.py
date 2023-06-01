@@ -1744,6 +1744,7 @@ class HTTPClient:
         after: Optional[Snowflake] = None,
         user_id: Optional[Snowflake] = None,
         action_type: Optional[AuditLogAction] = None,
+        proxy: Optional[str] = None,
     ) -> Response[audit_log.AuditLog]:
         params: Dict[str, Any] = {'limit': limit}
         if before:
@@ -1756,6 +1757,8 @@ class HTTPClient:
             params['action_type'] = action_type
 
         r = Route('GET', '/guilds/{guild_id}/audit-logs', guild_id=guild_id)
+        if proxy:
+            return self.request(r, params=params, proxy=proxy)
         return self.request(r, params=params)
 
     def get_widget(self, guild_id: Snowflake) -> Response[widget.Widget]:
