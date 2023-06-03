@@ -3840,7 +3840,7 @@ class Guild(Hashable):
         async def _before_strategy(retrieve: int, before: Optional[Snowflake], limit: Optional[int]):
             before_id = before.id if before else None
             data = await self._state.http.get_audit_logs(
-                self.id, limit=retrieve, user_id=user_id, action_type=action, before=before_id,proxy=proxy
+                self.id, limit=retrieve, user_id=user_id, action_type=action, before=before_id,proxy
             )
 
             entries = data.get('audit_log_entries', [])
@@ -3856,7 +3856,7 @@ class Guild(Hashable):
         async def _after_strategy(retrieve: int, after: Optional[Snowflake], limit: Optional[int]):
             after_id = after.id if after else None
             data = await self._state.http.get_audit_logs(
-                self.id, limit=retrieve, user_id=user_id, action_type=action, after=after_id,proxy=proxy
+                self.id, limit=retrieve, user_id=user_id, action_type=action, after=after_id,proxy
             )
 
             entries = data.get('audit_log_entries', [])
