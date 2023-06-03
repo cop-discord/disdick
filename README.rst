@@ -1,4 +1,4 @@
-discord.py
+disfart
 ==========
 
 .. image:: https://discord.com/api/guilds/336642139381301249/embed.png
@@ -19,6 +19,11 @@ Key Features
 - Modern Pythonic API using ``async`` and ``await``.
 - Proper rate limit handling.
 - Optimised in both speed and memory.
+- Proper Invalid Checking, Unlike discord.py, Invalid Ratelimiting to Prevent a cloudflare ban, and proxy optional arguments for some api calls that are heavy.
+- Limitation of Direct Messages to Prevent your Bot from being flagged
+- Smart Unbanning via guild.smart_unban()
+- Improved Speed and Lessened Thread usage
+- Clustering Support With IPC handling in the library
 
 Installing
 ----------
@@ -30,28 +35,20 @@ To install the library without full voice support, you can just run the followin
 .. code:: sh
 
     # Linux/macOS
-    python3 -m pip install -U git+https://github.com/cop-discord/discord.py.git
+    python3 -m pip install -U git+https://github.com/cop-discord/disfart
 
     # Windows
-    py -3 -m pip install -U git+https://github.com/cop-discord/discord.py.git
+    py -3 -m pip install -U git+https://github.com/cop-discord/disfart
 
 Otherwise to get voice support you should run the following command:
-
-.. code:: sh
-
-    # Linux/macOS
-    python3 -m pip install -U "discord.py[voice]"
-
-    # Windows
-    py -3 -m pip install -U discord.py[voice]
 
 
 To install the development version, do the following:
 
 .. code:: sh
 
-    $ git clone https://github.com/Rapptz/discord.py
-    $ cd discord.py
+    $ git clone https://github.com/cop-discord/disfart
+    $ cd disfart
     $ python3 -m pip install -U .[voice]
 
 
