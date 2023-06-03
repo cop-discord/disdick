@@ -39,7 +39,7 @@ from .user import BaseUser, User, _UserTag
 from .activity import create_activity, ActivityTypes
 from .permissions import Permissions
 from .enums import Status, try_enum
-from .errors import ClientException, Forbidden
+from .errors import ClientException, Forbidden,NotPermitted
 from .colour import Colour
 from .object import Object
 from .flags import MemberFlags
@@ -875,7 +875,8 @@ class Member(discord.abc.Messageable, _UserTag):
         guild_id = self.guild.id
         me = self._state.self_id == self.id
         payload: Dict[str, Any] = {}
-
+        if not self.guild.me.guild_permissions.manage_members: raise NotPermitted('manage_members')
+        if self.guild.me.top_role.position <= self.top_role.position: raise NotPermitted('higher_role')
         if nick is not MISSING:
             nick = nick or ''
             if me:
