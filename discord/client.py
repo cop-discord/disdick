@@ -2686,7 +2686,8 @@ class Client:
         found = state._get_private_channel_by_user(user.id)
         if found:
             return found
-
+        d=await self.invalid_cache.ratelimit('dms',5,60)
+        if d == True: await asyncio.sleep(60)
         data = await state.http.start_private_message(user.id)
         return state.add_dm_channel(data)
 
