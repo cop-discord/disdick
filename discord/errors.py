@@ -41,6 +41,8 @@ __all__ = (
     'RateLimited',
     'Forbidden',
     'NotFound',
+    'InvalidRatelimit',
+    'NotPermitted',
     'DiscordServerError',
     'InvalidData',
     'LoginFailure',
@@ -48,6 +50,11 @@ __all__ = (
     'PrivilegedIntentsRequired',
     'InteractionResponded',
 )
+
+class NotPermitted(Exception):
+    def __init__(self,permission):
+        self.permission=permission
+        super().__init__(f'Missing {self.permission} permissions')
 
 class DiscordException(Exception):
     """Base exception class for discord.py

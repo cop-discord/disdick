@@ -52,7 +52,7 @@ from . import utils, abc
 from .role import Role
 from .member import Member, VoiceState
 from .emoji import Emoji
-from .errors import InvalidData
+from .errors import InvalidData,NotPermitted
 from .permissions import PermissionOverwrite
 from .colour import Colour
 from .errors import ClientException
@@ -1198,6 +1198,8 @@ class Guild(Hashable):
         category: Optional[Snowflake] = None,
         **options: Any,
     ) -> Coroutine[Any, Any, GuildChannelPayload]:
+        if not self.me.guild_permissions.manage_channels: raise NotPermitted('manage_channels')
+
         if overwrites is MISSING:
             overwrites = {}
         elif not isinstance(overwrites, Mapping):
@@ -1954,7 +1956,7 @@ class Guild(Hashable):
             The newly updated guild. Note that this has the same limitations as
             mentioned in :meth:`Client.fetch_guild` and may not have full data.
         """
-
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         http = self._state.http
 
         if vanity_code is not MISSING:
@@ -2295,6 +2297,7 @@ class Guild(Hashable):
         :class:`BanEntry`
             The :class:`BanEntry` object for the specified user.
         """
+        if not self.me.guild_permissions.ban_members: raise NotPermitted('ban_members')
         data: BanPayload = await self._state.http.get_ban(user.id, self.id)
         return BanEntry(user=User(state=self._state, data=data['user']), reason=data['reason'])
 
@@ -2398,7 +2401,7 @@ class Guild(Hashable):
         :class:`BanEntry`
             The ban entry of the banned user.
         """
-
+        if not self.me.guild_permissions.ban_members: raise NotPermitted('ban_members')
         if before is not MISSING and after is not MISSING:
             raise TypeError('bans pagination does not support both before and after')
 
@@ -2507,7 +2510,7 @@ class Guild(Hashable):
             The number of members pruned. If ``compute_prune_count`` is ``False``
             then this returns ``None``.
         """
-
+        if not self.me.guild_permissions.kick_members: raise NotPermitted('kick_members')
         if not isinstance(days, int):
             raise TypeError(f'Expected int for ``days``, received {days.__class__.__name__} instead.')
 
@@ -2564,7 +2567,7 @@ class Guild(Hashable):
         """
 
         from .webhook import Webhook
-
+        if not self.me.guild_permissions.manage_webhooks: raise NotPermitted('manage_webhooks')
         data = await self._state.http.guild_webhooks(self.id)
         return [Webhook.from_state(d, state=self._state) for d in data]
 
@@ -2637,7 +2640,7 @@ class Guild(Hashable):
         List[:class:`Invite`]
             The list of invites that are currently active.
         """
-
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         data = await self._state.http.invites_from(self.id)
         result = []
         for invite in data:
@@ -2665,7 +2668,7 @@ class Guild(Hashable):
         from .template import Template
 
         payload = {'name': name}
-
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         if description:
             payload['description'] = description
 
@@ -2696,6 +2699,7 @@ class Guild(Hashable):
         HTTPException
             The account could not be found.
         """
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         await self._state.http.create_integration(self.id, type, id)
 
     async def integrations(self) -> List[Integration]:
@@ -2719,6 +2723,7 @@ class Guild(Hashable):
         List[:class:`Integration`]
             The list of integrations that are attached to the guild.
         """
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         data = await self._state.http.get_all_integrations(self.id)
 
         def convert(d):
@@ -2830,7 +2835,7 @@ class Guild(Hashable):
         payload = {
             'name': name,
         }
-
+        if not self.me.guild_permissions.manage_emojis_and_stickers: raise NotPermitted('manage_emojis_and_stickers')
         payload['description'] = description
 
         try:
@@ -2868,6 +2873,7 @@ class Guild(Hashable):
         HTTPException
             An error occurred deleting the sticker.
         """
+        if not self.me.guild_permissions.manage_emojis_and_stickers: raise NotPermitted('manage_emojis_and_stickers')
         await self._state.http.delete_guild_sticker(self.id, sticker.id, reason)
 
     async def fetch_scheduled_events(self, *, with_counts: bool = True) -> List[ScheduledEvent]:
@@ -3068,6 +3074,7 @@ class Guild(Hashable):
         :class:`ScheduledEvent`
             The created scheduled event.
         """
+        if not self.me.guild_permissions.manage_events: raise NotPermitted('manage_events')
         payload = {}
         metadata = {}
 
@@ -3244,7 +3251,7 @@ class Guild(Hashable):
         :class:`Emoji`
             The created emoji.
         """
-
+        if not self.me.guild_permissions.manage_emojis: raise NotPermitted('manage_emojis')
         img = utils._bytes_to_base64_data(image)
         if roles:
             role_ids: SnowflakeList = [role.id for role in roles]
@@ -3279,7 +3286,7 @@ class Guild(Hashable):
         HTTPException
             An error occurred deleting the emoji.
         """
-
+        if not self.me.guild_permissions.manage_emojis: raise NotPermitted('manage_emojis')
         await self._state.http.delete_custom_emoji(self.id, emoji.id, reason=reason)
 
     async def fetch_roles(self) -> List[Role]:
@@ -3402,6 +3409,8 @@ class Guild(Hashable):
             The newly created role.
         """
         fields: Dict[str, Any] = {}
+        if not self.me.guild_permissions.manage_roles: raise NotPermitted('manage_roles')
+
         if permissions is not MISSING:
             fields['permissions'] = str(permissions.value)
         else:
@@ -3484,7 +3493,7 @@ class Guild(Hashable):
         """
         if not isinstance(positions, Mapping):
             raise TypeError('positions parameter expects a dict.')
-
+        if not self.me.guild_permissions.manage_roles: raise NotPermitted('manage_roles')
         role_positions = []
         for role, position in positions.items():
             payload: RolePositionUpdatePayload = {'id': role.id, 'position': position}
@@ -3551,7 +3560,7 @@ class Guild(Hashable):
             The edited welcome screen.
         """
         fields = {}
-
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         if welcome_channels is not MISSING:
             welcome_channels_serialised = []
             for wc in welcome_channels:
@@ -3592,6 +3601,7 @@ class Guild(Hashable):
         HTTPException
             Kicking failed.
         """
+        if not self.me.guild_permissions.kick_members: raise NotPermitted('kick_members')
         await self._state.http.kick(user.id, self.id, reason=reason)
 
     async def ban(
@@ -3642,6 +3652,7 @@ class Guild(Hashable):
         TypeError
             You specified both ``delete_message_days`` and ``delete_message_seconds``.
         """
+        if not self.me.guild_permissions.ban_members: raise NotPermitted('ban_members')
         if delete_message_days is not MISSING and delete_message_seconds is not MISSING:
             raise TypeError('Cannot mix delete_message_days and delete_message_seconds keyword arguments.')
 
@@ -3680,6 +3691,7 @@ class Guild(Hashable):
         HTTPException
             Unbanning failed.
         """
+        if not self.me.guild_permissions.ban_members: raise NotPermitted('ban_members')
         await self._state.http.unban(user.id, self.id, reason=reason)
 
         
@@ -3688,7 +3700,7 @@ class Guild(Hashable):
         if isinstance(user,int):
             ban=utils.get(bans,user__id=user)
             if ban: 
-                return await self.unban(user=ban.user.id,reason=reason)
+                return await self.unban(user=ban.user,reason=reason)
             return None
         if isinstance(user,str):
             if user.startswith("@"):
@@ -3700,12 +3712,12 @@ class Guild(Hashable):
             if isinstance(search,list):
                 ban=utils.get(bans,user__name=search[0],user__discriminator=search[1])
                 if ban: 
-                    return await self.unban(user=ban.user.id,reason=reason)
+                    return await self.unban(user=ban.user,reason=reason)
                 return None
             else:
                 ban=utils.get(bans,user__name=search)
                 if ban: 
-                    return await self.unban(user=ban.user.id,reason=reason)
+                    return await self.unban(user=ban.user,reason=reason)
                 return None 
 
     @property
@@ -3742,6 +3754,7 @@ class Guild(Hashable):
         """
 
         # we start with { code: abc }
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         payload = await self._state.http.get_vanity_code(self.id)
         if not payload['code']:
             return None
@@ -3823,7 +3836,7 @@ class Guild(Hashable):
         :class:`AuditLogEntry`
             The audit log entry.
         """
-
+        if not self.me.guild_permissions.view_audit_log: raise NotPermitted('view_audit_log')
         async def _before_strategy(retrieve: int, before: Optional[Snowflake], limit: Optional[int]):
             before_id = before.id if before else None
             data = await self._state.http.get_audit_logs(
@@ -3988,6 +4001,7 @@ class Guild(Hashable):
         HTTPException
             Editing the widget failed.
         """
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         payload: EditWidgetSettings = {}
         if channel is not MISSING:
             payload['channel_id'] = None if channel is None else channel.id
@@ -4150,7 +4164,7 @@ class Guild(Hashable):
         :class:`AutoModRule`
             The automod rule that was fetched.
         """
-
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         data = await self._state.http.get_auto_moderation_rule(self.id, automod_rule_id)
 
         return AutoModRule(data=data, guild=self, state=self._state)
@@ -4176,6 +4190,7 @@ class Guild(Hashable):
         List[:class:`AutoModRule`]
             The automod rules that were fetched.
         """
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         data = await self._state.http.get_auto_moderation_rules(self.id)
 
         return [AutoModRule(data=d, guild=self, state=self._state) for d in data]
@@ -4232,6 +4247,7 @@ class Guild(Hashable):
         :class:`AutoModRule`
             The automod rule that was created.
         """
+        if not self.me.guild_permissions.manage_guild: raise NotPermitted('manage_guild')
         data = await self._state.http.create_auto_moderation_rule(
             self.id,
             name=name,
