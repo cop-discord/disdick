@@ -288,6 +288,14 @@ class ShardInfo:
         """
         return self._parent.ws.is_ratelimited()
 
+#class ClusterClient(Client):
+#    """A Client just like AutoSharded But with a kwarg for cluster_name for work with the IPC"""
+#    if TYPE_CHECKING:
+#        _connection:AutoShardedConnectionState
+
+#	def __init__(self, *args: Any, intents: Intents, **kwargs: Any) -> None:
+        
+
 
 class AutoShardedClient(Client):
     """A client similar to :class:`Client` except it handles the complications

@@ -47,7 +47,7 @@ from typing import (
 )
 from urllib.parse import quote as _uriquote
 from collections import deque
-import datetime
+import datetime,orjson
 from .expiringdictionary import ExpiringDictionary as Cache
 import aiohttp
 
@@ -510,6 +510,7 @@ class HTTPClient:
         self.token: Optional[str] = None
         self.proxy: Optional[str] = proxy
         self.invalid_ratelimiter = Cache()
+        self.invalid_limit=9950
         self.anti_cloudflare_ban = anti_cloudflare_ban
         self.invalid_ratelimit=0
         self.proxy_auth: Optional[aiohttp.BasicAuth] = proxy_auth
@@ -560,6 +561,7 @@ class HTTPClient:
         route: Route,
         *,
         proxy: Optional[str] = None,
+        bypass: Optional[bool] = False,
         files: Optional[Sequence[File]] = None,
         form: Optional[Iterable[Dict[str, Any]]] = None,
         **kwargs: Any,
@@ -578,7 +580,7 @@ class HTTPClient:
 
         ratelimit = self.get_ratelimit(key)
         if self.anti_cloudflare_ban == True:
-            if self.invalid_ratelimiter.is_ratelimited("invalids") == True:
+            if bypass == False and self.invalid_ratelimiter.is_ratelimited("invalids") == True:
                 raise InvalidRatelimit(self.invalid_ratelimiter.time_remaining("invalids"))
         # header creation
         headers: Dict[str, str] = {
@@ -745,7 +747,7 @@ class HTTPClient:
                         # the usual error cases
                         self.invalids+=1
                         if self.anti_cloudflare_ban == True:
-                            d=await self.invalid_ratelimiter.ratelimit("invalids",9950,600)
+                            d=await self.invalid_ratelimiter.ratelimit("invalids",self.invalid_limit,600)
                             if d == True:
                                 v=self.invalid_ratelimiter
                                 time_remaining=(v.delete['invalids']['last']+v.delete['invalids']['bucket'])-int(datetime.datetime.now().timestamp())
@@ -805,6 +807,7 @@ class HTTPClient:
         self.__session = aiohttp.ClientSession(
             connector=self.connector,
             ws_response_class=DiscordClientWebSocketResponse,
+            json_serialize=lambda x: orjson.dumps(x).decode(),
             trace_configs=None if self.http_trace is None else [self.http_trace],
         )
         self._global_over = asyncio.Event()
@@ -889,13 +892,13 @@ class HTTPClient:
         return self.request(r, reason=reason)
 
     def delete_messages(
-        self, channel_id: Snowflake, message_ids: SnowflakeList, *, reason: Optional[str] = None
+        self, channel_id: Snowflake, message_ids: SnowflakeList, proxy:str=None, *, reason: Optional[str] = None
     ) -> Response[None]:
         r = Route('POST', '/channels/{channel_id}/messages/bulk-delete', channel_id=channel_id)
         payload = {
             'messages': message_ids,
         }
-
+        if proxy: return self.request(r, json=payload, proxy=proxy, reason=reason)
         return self.request(r, json=payload, reason=reason)
 
     def edit_message(
@@ -1045,14 +1048,15 @@ class HTTPClient:
 
     # Member management
 
-    def kick(self, user_id: Snowflake, guild_id: Snowflake, reason: Optional[str] = None) -> Response[None]:
+    def kick(self, user_id: Snowflake, guild_id: Snowflake, bypass: Optional[bool] = False, reason: Optional[str] = None) -> Response[None]:
         r = Route('DELETE', '/guilds/{guild_id}/members/{user_id}', guild_id=guild_id, user_id=user_id)
-        return self.request(r, reason=reason)
+        return self.request(r, reason=reason, bypass=bypass)
 
     def ban(
         self,
         user_id: Snowflake,
         guild_id: Snowflake,
+        bypass: Optional[bool]=False,
         delete_message_seconds: int = 86400,  # one day
         reason: Optional[str] = None,
     ) -> Response[None]:
@@ -1061,7 +1065,7 @@ class HTTPClient:
             'delete_message_seconds': delete_message_seconds,
         }
 
-        return self.request(r, params=params, reason=reason)
+        return self.request(r, params=params, bypass=bypass, reason=reason)
 
     def unban(self, user_id: Snowflake, guild_id: Snowflake, *, reason: Optional[str] = None) -> Response[None]:
         r = Route('DELETE', '/guilds/{guild_id}/bans/{user_id}', guild_id=guild_id, user_id=user_id)

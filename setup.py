@@ -67,12 +67,12 @@ packages = [
 ]
 
 setup(
-    name='discord.py',
-    author='Rapptz',
-    url='https://github.com/Rapptz/discord.py',
+    name='disfart',
+    author='cop-discord',
+    url='https://github.com/cop-discord/disfart',
     project_urls={
         'Documentation': 'https://discordpy.readthedocs.io/en/latest/',
-        'Issue tracker': 'https://github.com/Rapptz/discord.py/issues',
+        'Issue tracker': 'https://github.com/cop-discord/disfart/issues',
     },
     version=version,
     packages=packages,

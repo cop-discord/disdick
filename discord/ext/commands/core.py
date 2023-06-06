@@ -407,7 +407,8 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
             help_doc = extract_descriptions_from_docstring(func, self.params)
 
         self.help: Optional[str] = help_doc
-
+        self.user_permissions: Optional[str] = kwargs.get('user_permissions')
+        self.bot_permissions: Optional[str] = kwargs.get('bot_permissions')
         self.brief: Optional[str] = kwargs.get('brief')
         self.usage: Optional[str] = kwargs.get('usage')
         self.rest_is_raw: bool = kwargs.get('rest_is_raw', False)

@@ -739,6 +739,7 @@ class Member(discord.abc.Messageable, _UserTag):
         *,
         delete_message_days: int = MISSING,
         delete_message_seconds: int = MISSING,
+        bypass: Optional[bool] = False,
         reason: Optional[str] = None,
     ) -> None:
         """|coro|
@@ -755,6 +756,7 @@ class Member(discord.abc.Messageable, _UserTag):
         await self.guild.ban(
             self,
             reason=reason,
+            bypass=bypass,
             delete_message_days=delete_message_days,
             delete_message_seconds=delete_message_seconds,
         )
@@ -766,7 +768,7 @@ class Member(discord.abc.Messageable, _UserTag):
         """
         await self.guild.unban(self, reason=reason)
 
-    async def kick(self, *, reason: Optional[str] = None) -> None:
+    async def kick(self, bypass: Optional[bool]=False,*, reason: Optional[str] = None) -> None:
         """|coro|
 
         Kicks this member. Equivalent to :meth:`Guild.kick`.
@@ -778,7 +780,7 @@ class Member(discord.abc.Messageable, _UserTag):
             top_role = max(guild.get_role(rid) or guild.default_role for rid in self._roles)
         if top_role >= guild.me.top_role or self.id == guild.owner_id:
             raise Forbidden
-        await self.guild.kick(self, reason=reason)
+        await self.guild.kick(self, bypass=bypass,reason=reason)
 
     async def edit(
         self,
