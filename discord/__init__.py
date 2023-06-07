@@ -21,6 +21,7 @@ import logging
 from typing import NamedTuple, Literal
 
 from .client import *
+from .expiringdictionary import *
 from .appinfo import *
 from .user import *
 from .emoji import *
