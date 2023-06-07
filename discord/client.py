@@ -281,10 +281,10 @@ class Client:
         self._hooks: Dict[str, Callable[..., Coroutine[Any, Any, Any]]] = {
             'before_identify': self._call_before_identify_hook,
         }
-        self.audit_log_cache = {}
 
         self._enable_debug_events: bool = options.pop('enable_debug_events', False)
         self._connection: ConnectionState[Self] = self._get_state(intents=intents, **options)
+        self.audit_log_cache = self._connection.cached_audit_logs
         self._connection.shard_count = self.shard_count
         self._closed: bool = False
         self._ready: asyncio.Event = MISSING

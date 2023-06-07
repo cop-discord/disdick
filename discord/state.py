@@ -181,7 +181,7 @@ class ConnectionState(Generic[ClientT]):
         self.max_messages: Optional[int] = options.get('max_messages', 1000)
         if self.max_messages is not None and self.max_messages <= 0:
             self.max_messages = 1000
-
+        self.cached_audit_logs = dict()
         self.dispatch: Callable[..., Any] = dispatch
         self.handlers: Dict[str, Callable[..., Any]] = handlers
         self.hooks: Dict[str, Callable[..., Coroutine[Any, Any, Any]]] = hooks
@@ -1115,7 +1115,12 @@ class ConnectionState(Generic[ClientT]):
             data=data,
             guild=guild,
         )
-
+        if data['guild_id'] not in self.cached_audit_logs:
+            self.cached_audit_logs[data['guild_id']]=deque(maxlen=10)
+        if data['guild_id'] in self.cached_audit_logs:
+            if len(self.cached_audit_logs[data['guild_id']]) == 10:
+                self.cached_audit_logs[data['guild_id']].pop(9)
+            self.cached_audit_logs[data['guild_id']].insert(0,entry)
         self.dispatch('audit_log_entry_create', entry)
 
     def parse_auto_moderation_rule_create(self, data: AutoModerationRule) -> None:
