@@ -1119,7 +1119,7 @@ class ConnectionState(Generic[ClientT]):
             self.cached_audit_logs[data['guild_id']]=deque(maxlen=10)
         if data['guild_id'] in self.cached_audit_logs:
             if len(self.cached_audit_logs[data['guild_id']]) == 10:
-                self.cached_audit_logs[data['guild_id']].pop(9)
+                self.cached_audit_logs[data['guild_id']].pop()
             self.cached_audit_logs[data['guild_id']].insert(0,entry)
         self.dispatch('audit_log_entry_create', entry)
 
