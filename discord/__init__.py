@@ -69,7 +69,7 @@ from .interactions import *
 from .components import *
 from .threads import *
 from .automod import *
-
+from .pool import *
 
 class VersionInfo(NamedTuple):
     major: int
