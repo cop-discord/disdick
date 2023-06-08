@@ -34,6 +34,6 @@ class ProxyPool(object):
 
     async def session(self):
         if self.local == True:
-            return aiohttp.ClientSession(connector=aiohttp.TCPConnector(family=socket.AF_INET,limit=0,local_addr=(next(self.proxies),0)),json_serialize=lambda x: orjson.dumps(x).decode(),,resolver=aiohttp.AsyncResolver())
+            return aiohttp.ClientSession(connector=aiohttp.TCPConnector(family=socket.AF_INET,limit=0,local_addr=(next(self.proxies),0)),json_serialize=lambda x: orjson.dumps(x).decode(),resolver=aiohttp.AsyncResolver())
         else:
             return aiohttp.ClientSession(connector=aiohttp.TCPConnector(family=socket.AF_INET,limit=0),proxy=next(self.proxies),resolver=aiohttp.AsyncResolver(),json_serialize=lambda x: orjson.dumps(x).decode(),)
