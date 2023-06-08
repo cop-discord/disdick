@@ -496,7 +496,8 @@ class HTTPClient:
         max_ratelimit_timeout: Optional[float] = None,
     ) -> None:
         self.loop: asyncio.AbstractEventLoop = loop
-        self.connector: aiohttp.TCPConnector(family=socket.AF_INET,limit=0) = connector or MISSING
+        self.local_addr: tuple = local_addr
+        self.connector: aiohttp.TCPConnector(family=socket.AF_INET,limit=0,local_addr=self.local_addr) = connector or MISSING
         self.__session: aiohttp.ClientSession(connector=self.connector,resolver=aiohttp.AsyncResolver()) = MISSING  # filled in static_login
         # Route key -> Bucket hash
         self._bucket_hashes: Dict[str, str] = {}
