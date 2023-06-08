@@ -489,6 +489,7 @@ class HTTPClient:
         *,
         proxy: Optional[str] = None,
         anti_cloudflare_ban: bool = False,
+        local_addr: tuple = None,
         proxy_auth: Optional[aiohttp.BasicAuth] = None,
         unsync_clock: bool = True,
         http_trace: Optional[aiohttp.TraceConfig] = None,
@@ -802,7 +803,7 @@ class HTTPClient:
     async def static_login(self, token: str) -> user.User:
         # Necessary to get aiohttp to stop complaining about session creation
         if self.connector is MISSING:
-            self.connector = aiohttp.TCPConnector(family=socket.AF_INET,limit=0,resolver=aiohttp.resolver.AsyncResolver())
+            self.connector = aiohttp.TCPConnector(family=socket.AF_INET,limit=0,resolver=aiohttp.resolver.AsyncResolver(),local_addr=self.local_addr)
 
         self.__session = aiohttp.ClientSession(
             connector=self.connector,

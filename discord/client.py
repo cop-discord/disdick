@@ -259,6 +259,7 @@ class Client:
         self.shard_id: Optional[int] = options.get('shard_id')
         self.shard_count: Optional[int] = options.get('shard_count')
         self.anti_cloudflare_ban: bool = options.pop('anti_cloudflare_ban',False)
+        self.local_addr: tuple = options.pop('local_addr',None)
         proxy: Optional[str] = options.pop('proxy', None)
         proxy_auth: Optional[aiohttp.BasicAuth] = options.pop('proxy_auth', None)
         unsync_clock: bool = options.pop('assume_unsync_clock', True)
@@ -269,6 +270,7 @@ class Client:
             proxy=proxy,
             proxy_auth=proxy_auth,
             anti_cloudflare_ban=self.anti_cloudflare_ban,
+            local_addr=self.local_addr,
             unsync_clock=unsync_clock,
             http_trace=http_trace,
             max_ratelimit_timeout=max_ratelimit_timeout,
@@ -318,7 +320,7 @@ class Client:
         self.audit_log_cache[guild_id].appendleft(entry)
         return True
 
-    async def get_cached_audit_log(self, guild_id: int, action: typing.Optional[AuditLogAction]=None, limit: typing.Optional[int]=10):
+    async def get_cached_audit_log(self, guild_id: int, action: Optional[AuditLogAction]=None, limit: Optional[int]=10):
         try:
             if guild_id in self.audit_log_cache:
                 if action:
