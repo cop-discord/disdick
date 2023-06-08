@@ -525,6 +525,10 @@ class Permissions(BaseFlags):
         """:class:`bool`: Returns ``True`` if a user can change other user's nickname in the guild."""
         return 1 << 27
 
+    @make_permission_alias('manage_nicknames')
+    def manage_members(self) -> int:
+        return 1 << 27
+
     @flag_value
     def manage_roles(self) -> int:
         """:class:`bool`: Returns ``True`` if a user can create or edit roles less than their role's position.
