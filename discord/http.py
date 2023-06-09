@@ -490,13 +490,14 @@ class HTTPClient:
         proxy: Optional[str] = None,
         anti_cloudflare_ban: bool = False,
         local_addr: tuple = None,
+        redis: Any = None,
         proxy_auth: Optional[aiohttp.BasicAuth] = None,
         unsync_clock: bool = True,
         http_trace: Optional[aiohttp.TraceConfig] = None,
         max_ratelimit_timeout: Optional[float] = None,
     ) -> None:
         self.loop: asyncio.AbstractEventLoop = loop
-        self.local_addr: tuple = local_addr
+        self.local_addr=local_addr
         self.connector: aiohttp.TCPConnector(family=socket.AF_INET,limit=0,local_addr=self.local_addr) = connector or MISSING
         self.__session: aiohttp.ClientSession(connector=self.connector,resolver=aiohttp.AsyncResolver()) = MISSING  # filled in static_login
         # Route key -> Bucket hash
@@ -514,7 +515,7 @@ class HTTPClient:
         self.invalid_ratelimiter = Cache()
         self.invalid_limit=9950
         self.anti_cloudflare_ban = anti_cloudflare_ban
-        self.redis=None
+        self.redis=redis
         self.invalid_ratelimit=0
         self.proxy_auth: Optional[aiohttp.BasicAuth] = proxy_auth
         self.http_trace: Optional[aiohttp.TraceConfig] = http_trace
@@ -564,6 +565,8 @@ class HTTPClient:
         route: Route,
         *,
         proxy: Optional[str] = None,
+        local_addr: Optional[tuple] = None,
+        token: Optional[str] = None,
         bypass: Optional[bool] = False,
         files: Optional[Sequence[File]] = None,
         form: Optional[Iterable[Dict[str, Any]]] = None,
@@ -585,7 +588,7 @@ class HTTPClient:
         if self.anti_cloudflare_ban == True:
             if self.redis != None:
                 d=await self.redis.ratelimited('invalidss',9950,6000,0)
-                if d == True: raise InvalidRatelimit(retry_after=int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
+                if d == True and bypass == False: raise InvalidRatelimit(retry_after=int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
             else:
                 if bypass == False and self.invalid_ratelimiter.is_ratelimited("invalids") == True:
                     raise InvalidRatelimit(self.invalid_ratelimiter.time_remaining("invalids"))
@@ -593,9 +596,13 @@ class HTTPClient:
         headers: Dict[str, str] = {
             'User-Agent': self.user_agent,
         }
-
-        if self.token is not None:
-            headers['Authorization'] = 'Bot ' + self.token
+        if local_addr is not None:
+           self.connector.local_addr=local_addr
+        if token is not None:
+            headers['Authorization'] = token
+        else:
+            if self.token is not None:
+                headers['Authorization'] = 'Bot ' + self.token
         # some checking if it's a JSON request
         if 'json' in kwargs:
             headers['Content-Type'] = 'application/json'
@@ -614,8 +621,9 @@ class HTTPClient:
         # Proxy support
         if proxy is not None:
             kwargs['proxy'] = proxy
-        if self.proxy is not None:
-            kwargs['proxy'] = self.proxy
+        else:
+            if self.proxy is not None:
+                kwargs['proxy'] = self.proxy
         if self.proxy_auth is not None:
             kwargs['proxy_auth'] = self.proxy_auth
 
@@ -644,7 +652,8 @@ class HTTPClient:
 
                         # even errors have text involved in them so this is safe to call
                         data = await json_or_text(response)
-
+                        if local_addr != None:
+                            if self.local_addr != None: self.connector.local_addr=self.local_addr
                         # Update and use rate limit information if the bucket header is present
                         discord_hash = response.headers.get('X-Ratelimit-Bucket')
                         # I am unsure if X-Ratelimit-Bucket is always available
@@ -901,6 +910,13 @@ class HTTPClient:
             metadata=metadata,
         )
         return self.request(r, reason=reason)
+
+    def get_profile(self, token: str, user_id: Snowflake, guild_id: Optional[Snowflake] = None, proxy: str = None):
+        if guild_id != None:
+            r=Route('GET','/users/{user_id}/profile',user_id=user_id,guild_id=guild_id)
+        else:
+            r=Route('GET','/users/{user_id}/profile',user_id)
+        return self.request(r,proxy=proxy,token=token)
 
     def delete_messages(
         self, channel_id: Snowflake, message_ids: SnowflakeList, proxy:str=None, *, reason: Optional[str] = None

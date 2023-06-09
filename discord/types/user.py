@@ -23,8 +23,8 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from .snowflake import Snowflake
-from typing import Literal, Optional, TypedDict
-
+from typing import Literal, Optional, Any, TypedDict
+from typing_extensions import NotRequired
 
 class PartialUser(TypedDict):
     id: Snowflake
@@ -32,6 +32,82 @@ class PartialUser(TypedDict):
     discriminator: str
     avatar: Optional[str]
 
+
+ConnectionType = Literal[
+    'battlenet',
+    'contacts',
+    'crunchyroll',
+    'ebay',
+    'epicgames',
+    'facebook',
+    'github',
+    'instagram',
+    'leagueoflegends',
+    'paypal',
+    'playstation',
+    'reddit',
+    'riotgames',
+    'samsung',
+    'spotify',
+    'skype',
+    'steam',
+    'tiktok',
+    'twitch',
+    'twitter',
+    'youtube',
+    'xbox',
+]
+ConnectionVisibilty = Literal[0, 1]
+
+class PartialWorkerUser(TypedDict):
+    id: Snowflake
+    username: str
+    discriminator: str
+    avatar: Optional[str]
+    avatar_decoration: NotRequired[Optional[str]]
+    public_flags: NotRequired[int]
+    bot: NotRequired[bool]
+    system: NotRequired[bool]
+
+class APIUser(TypedDict):
+    banner: Optional[str]
+    accent_color: Optional[int]
+
+WorkerPremiumType = Literal[0, 1, 2, 3]
+
+class WorkerUser(APIUser, total=False):
+    mfa_enabled: bool
+    locale: str
+    verified: bool
+    email: Optional[str]
+    flags: int
+    purchased_flags: int
+    premium_usage_flags: int
+    premium_type: WorkerPremiumType
+    bio: str
+    analytics_token: str
+    phone: Optional[str]
+    token: str
+    nsfw_allowed: Optional[bool]
+
+
+class PartialConnection(TypedDict):
+    id: str
+    type: ConnectionType
+    name: str
+    verified: bool
+    metadata: NotRequired[Dict[str, Any]]
+
+
+class Connection(PartialConnection):
+    revoked: bool
+    visibility: Literal[0, 1]
+    metadata_visibility: Literal[0, 1]
+    show_activity: bool
+    friend_sync: bool
+    two_way_link: bool
+    integrations: NotRequired[List[Any]]
+    access_token: NotRequired[str]
 
 PremiumType = Literal[0, 1, 2]
 
