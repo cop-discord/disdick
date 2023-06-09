@@ -106,7 +106,7 @@ class Connection(PartialConnection):
     show_activity: bool
     friend_sync: bool
     two_way_link: bool
-    integrations: NotRequired[List[Any]]
+    integrations: NotRequired[list[Any]]
     access_token: NotRequired[str]
 
 PremiumType = Literal[0, 1, 2]
