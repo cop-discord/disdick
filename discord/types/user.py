@@ -96,7 +96,7 @@ class PartialConnection(TypedDict):
     type: ConnectionType
     name: str
     verified: bool
-    metadata: NotRequired[Dict[str, Any]]
+    metadata: NotRequired[dict[str, Any]]
 
 
 class Connection(PartialConnection):
