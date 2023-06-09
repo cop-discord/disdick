@@ -514,6 +514,7 @@ class HTTPClient:
         self.invalid_ratelimiter = Cache()
         self.invalid_limit=9950
         self.anti_cloudflare_ban = anti_cloudflare_ban
+        self.redis=None
         self.invalid_ratelimit=0
         self.proxy_auth: Optional[aiohttp.BasicAuth] = proxy_auth
         self.http_trace: Optional[aiohttp.TraceConfig] = http_trace
@@ -582,8 +583,12 @@ class HTTPClient:
 
         ratelimit = self.get_ratelimit(key)
         if self.anti_cloudflare_ban == True:
-            if bypass == False and self.invalid_ratelimiter.is_ratelimited("invalids") == True:
-                raise InvalidRatelimit(self.invalid_ratelimiter.time_remaining("invalids"))
+            if self.redis != None:
+                d=await self.redis.ratelimited('invalidss',9950,6000,0)
+                if d == True: raise InvalidRatelimit(retry_after=int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
+            else:
+                if bypass == False and self.invalid_ratelimiter.is_ratelimited("invalids") == True:
+                    raise InvalidRatelimit(self.invalid_ratelimiter.time_remaining("invalids"))
         # header creation
         headers: Dict[str, str] = {
             'User-Agent': self.user_agent,
@@ -749,11 +754,15 @@ class HTTPClient:
                         # the usual error cases
                         self.invalids+=1
                         if self.anti_cloudflare_ban == True:
-                            d=await self.invalid_ratelimiter.ratelimit("invalids",self.invalid_limit,600)
-                            if d == True:
-                                v=self.invalid_ratelimiter
-                                time_remaining=(v.delete['invalids']['last']+v.delete['invalids']['bucket'])-int(datetime.datetime.now().timestamp())
-                                raise InvalidRatelimit(time_remaining)
+                            if self.redis != None:
+                                d=await self.redis.ratelimited('invalidss',9950,6000,1)
+                                if d == True: raise InvalidRatelimit(int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
+                            else:
+                                d=await self.invalid_ratelimiter.ratelimit("invalids",self.invalid_limit,600)
+                                if d == True:
+                                    v=self.invalid_ratelimiter
+                                    time_remaining=(v.delete['invalids']['last']+v.delete['invalids']['bucket'])-int(datetime.datetime.now().timestamp())
+                                    raise InvalidRatelimit(time_remaining)
                         if response.status == 403:
                             raise Forbidden(response, data)
                         elif response.status == 404:
