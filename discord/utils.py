@@ -63,7 +63,7 @@ import functools
 from inspect import isawaitable as _isawaitable, signature as _signature
 from operator import attrgetter
 from urllib.parse import urlencode
-import orjson
+import orjson,aiohttp,socket
 import re
 import os
 import sys
@@ -307,6 +307,15 @@ def deprecated(instead: Optional[str] = None) -> Callable[[Callable[P, T]], Call
         return decorated
 
     return actual_decorator
+
+async def image_validator(url:str,proxy:str=None):
+    try:
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=0,family=socket.AF_INET)) as session:
+            async with session.get(url,proxy=proxy) as request:
+                if request.status != 200: return False
+                if len(await request.read()) == 0: return False
+                return True
+    except: return False
 
 
 def oauth_url(

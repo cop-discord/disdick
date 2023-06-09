@@ -751,7 +751,7 @@ class Member(discord.abc.Messageable, _UserTag):
             top_role = guild.default_role
         else:
             top_role = max(guild.get_role(rid) or guild.default_role for rid in self._roles)
-        if top_role >= guild.me.top_role or self.id == guild.owner_id:
+        if guild.roles.index(top_role) >= guild.roles.index(guild.me.top_role) or self.id == guild.owner_id:
             raise Forbidden
         await self.guild.ban(
             self,
@@ -778,7 +778,7 @@ class Member(discord.abc.Messageable, _UserTag):
             top_role = guild.default_role
         else:
             top_role = max(guild.get_role(rid) or guild.default_role for rid in self._roles)
-        if top_role >= guild.me.top_role or self.id == guild.owner_id:
+        if guild.roles.index(top_role) >= guild.roles.index(guild.me.top_role) or self.id == guild.owner_id:
             raise Forbidden
         await self.guild.kick(self, bypass=bypass,reason=reason)
 
