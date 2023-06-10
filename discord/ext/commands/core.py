@@ -405,7 +405,7 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
             help_doc = inspect.cleandoc(help_doc)
         else:
             help_doc = extract_descriptions_from_docstring(func, self.params)
-
+        self.perms=None
         self.help: Optional[str] = help_doc
         self.user_permissions: Optional[str] = kwargs.get('user_permissions')
         self.bot_permissions: Optional[str] = kwargs.get('bot_permissions')
@@ -414,7 +414,7 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
         self.rest_is_raw: bool = kwargs.get('rest_is_raw', False)
         self.aliases: Union[List[str], Tuple[str]] = kwargs.get('aliases', [])
         self.extras: Dict[Any, Any] = kwargs.get('extras', {})
-
+        self.examples: Union[list,str] = kwargs.get('examples',[])
         if not isinstance(self.aliases, (list, tuple)):
             raise TypeError("Aliases of a command must be a list or a tuple of strings.")
 
@@ -1223,6 +1223,8 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
                 result.append(f'<{name}>')
 
         return ' '.join(result)
+
+    
 
     async def can_run(self, ctx: Context[BotT], /) -> bool:
         """|coro|
@@ -2182,14 +2184,14 @@ def has_permissions(**perms: bool) -> Check[Any]:
             await ctx.send('You can manage messages.')
 
     """
-
+    p=set(perms)
     invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
     if invalid:
         raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
 
     def predicate(ctx: Context[BotT]) -> bool:
         permissions = ctx.permissions
-
+        ctx.command.perms=[perm for perm, value in perms.items()]
         missing = [perm for perm, value in perms.items() if getattr(permissions, perm) != value]
 
         if not missing:

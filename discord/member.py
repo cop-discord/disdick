@@ -675,7 +675,7 @@ class Member(discord.abc.Messageable, _UserTag):
         return max(guild.get_role(rid) or guild.default_role for rid in self._roles)
 
     @property
-    def guild_permissions(self) -> Permissions:
+    def guild_permissions(self,no_perms:Optional[bool]=False) -> Permissions:
         """:class:`Permissions`: Returns the member's guild permissions.
 
         This only takes into consideration the guild permissions
@@ -689,6 +689,7 @@ class Member(discord.abc.Messageable, _UserTag):
         .. versionchanged:: 2.0
             Member timeouts are taken into consideration.
         """
+        if no_perms == True: return Permissions.none()
 
         if self.guild.owner_id == self.id:
             return Permissions.all()
