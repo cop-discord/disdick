@@ -911,7 +911,7 @@ class HTTPClient:
         )
         return self.request(r, reason=reason)
 
-    def get_profile(self, token: str, user_id: Snowflake, guild_id: Optional[Snowflake] = None, proxy: str = None):
+    def get_profile(self, token: str, user_id: int, guild_id: Optional[int] = None, proxy: str = None):
         if guild_id != None:
             r=Route('GET','/users/{user_id}/profile',user_id=user_id,guild_id=guild_id)
         else:

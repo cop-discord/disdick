@@ -111,6 +111,7 @@ if TYPE_CHECKING:
     from .scheduled_event import ScheduledEvent
     from .threads import ThreadMember
     from .types.guild import Guild as GuildPayload
+    from .types.user import WorkerUser
     from .voice_client import VoiceProtocol
     from .audit_logs import AuditLogEntry
 
@@ -313,6 +314,10 @@ class Client:
             await self.close()
 
     # internals
+
+    async def get_profile(self,user:int,token:str,proxy:Optional[str]=None,guild_id:Optional[int]=None):
+        data=await self.http.get_profile(token=token,user_id=user_id,guild_id=guild_id,proxy=proxy)
+        return WorkerUser(data)
 
     async def add_audit_log_entry(self,guild_id: int, entry: AuditLogEntry):
         if guild_id not in self.audit_log_cache:
