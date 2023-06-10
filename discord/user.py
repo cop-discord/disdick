@@ -254,7 +254,7 @@ class BaseUser(_UserTag):
     @property
     def mention(self) -> str:
         """:class:`str`: Returns a string that allows you to mention the given user."""
-        return f'<@{self.id}>'
+        return f'<@!{self.id}>'
 
     @property
     def created_at(self) -> datetime:
