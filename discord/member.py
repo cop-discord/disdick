@@ -878,8 +878,9 @@ class Member(discord.abc.Messageable, _UserTag):
         guild_id = self.guild.id
         me = self._state.self_id == self.id
         payload: Dict[str, Any] = {}
-        if not self.guild.me.guild_permissions.manage_members: raise NotPermitted('manage_members')
-        if self.guild.roles.index(self.guild.me.top_role) <= self.guild.roles.index(self.top_role): raise NotPermitted('higher_role')
+        if voice_channel is MISSING:
+            if not self.guild.me.guild_permissions.manage_members: raise NotPermitted('manage_members')
+            if self.guild.roles.index(self.guild.me.top_role) <= self.guild.roles.index(self.top_role): raise NotPermitted('higher_role')
         if nick is not MISSING:
             nick = nick or ''
             if me:
