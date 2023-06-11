@@ -3578,7 +3578,7 @@ class Guild(Hashable):
         data = await self._state.http.edit_welcome_screen(self.id, reason=reason, **fields)
         return WelcomeScreen(data=data, guild=self)
 
-    async def kick(self, user: Snowflake, *, reason: Optional[str] = None) -> None:
+    async def kick(self, user: Snowflake, *, bypass:Optional[bool]=False,reason: Optional[str] = None) -> None:
         """|coro|
 
         Kicks a user from the guild.
@@ -3602,7 +3602,7 @@ class Guild(Hashable):
             Kicking failed.
         """
         if not self.me.guild_permissions.kick_members: raise NotPermitted('kick_members')
-        await self._state.http.kick(user.id, self.id, reason=reason)
+        await self._state.http.kick(user.id, self.id, bypass=bypass,reason=reason)
 
     async def ban(
         self,
