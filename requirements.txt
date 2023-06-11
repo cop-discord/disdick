@@ -3,3 +3,4 @@ aiodns
 humanfriendly
 orjson
 psutil
+typing_extensions
