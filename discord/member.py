@@ -738,10 +738,10 @@ class Member(discord.abc.Messageable, _UserTag):
     async def ban(
         self,
         *,
+        bypass: Optional[bool] = False,
+        reason: Optional[str]=None,
         delete_message_days: int = MISSING,
         delete_message_seconds: int = MISSING,
-        bypass: Optional[bool] = False,
-        reason: Optional[str] = None,
     ) -> None:
         """|coro|
 
@@ -756,8 +756,8 @@ class Member(discord.abc.Messageable, _UserTag):
             raise Forbidden
         await self.guild.ban(
             self,
-            reason=reason,
             bypass=bypass,
+            reason=reason,
             delete_message_days=delete_message_days,
             delete_message_seconds=delete_message_seconds,
         )
