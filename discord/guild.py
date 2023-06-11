@@ -3665,7 +3665,7 @@ class Guild(Hashable):
         if delete_message_seconds is MISSING:
             delete_message_seconds = 86400  # one day
 
-        await self._state.http.ban(user.id, self.id,delete_message_seconds, bypass=bypass,reason=reason)
+        await self._state.http.ban(user.id, self.id,delete_message_seconds=delete_message_seconds,bypass=bypass,reason=reason)
 
     async def unban(self, user: Snowflake, *, reason: Optional[str] = None) -> None:
         """|coro|
