@@ -207,7 +207,7 @@ class MemberConverter(IDConverter[discord.Member]):
             return discord.utils.get(members, name=username, discriminator=discriminator)
         else:
             members = await guild.query_members(argument, limit=100, cache=cache)
-            return discord.utils.find(lambda m: m.name == argument or m.nick == argument, members)
+            return discord.utils.find(lambda m: m.nick == argument or m.global_name == argument, members)
 
     async def query_member_by_id(self, bot: _Bot, guild: discord.Guild, user_id: int) -> Optional[discord.Member]:
         ws = bot._get_websocket(shard_id=guild.shard_id)
@@ -317,7 +317,7 @@ class UserConverter(IDConverter[discord.User]):
             if result is not None:
                 return result
 
-        predicate = lambda u: u.name == arg
+        predicate = lambda u: u.name == arg or u.global_name == arg
         result = discord.utils.find(predicate, state._users.values())
         if result is None:
             if hasattr(ctx.bot,"ipc"):

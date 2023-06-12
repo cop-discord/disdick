@@ -228,6 +228,7 @@ class User(Snowflake, Protocol):
 
     name: str
     discriminator: str
+    global_name: Optional[str]
     bot: bool
     system: bool
 

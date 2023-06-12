@@ -30,6 +30,7 @@ class PartialUser(TypedDict):
     id: Snowflake
     username: str
     discriminator: str
+    global_name: Optional[str]
     avatar: Optional[str]
 
 
