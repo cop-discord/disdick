@@ -429,7 +429,7 @@ class Permissions(BaseFlags):
         """:class:`bool`: Returns ``True`` if a user can read messages from all or specific text channels."""
         return 1 << 10
 
-    @make_permissions_alias('manage_guild')
+    @make_permission_alias('manage_guild')
     def manage_server(self) -> int:
         return 1 << 5
 
