@@ -450,6 +450,10 @@ class MessageFlags(BaseFlags):
         """
         return 4096
 
+    @flag_value
+    def voice(self):
+        return 8192
+
 
 @fill_with_flags()
 class PublicUserFlags(BaseFlags):

@@ -56,7 +56,7 @@ from typing import (
     TYPE_CHECKING,
 )
 import unicodedata
-from base64 import b64encode
+from base64 import b64encode,b64decode
 from bisect import bisect_left
 import datetime
 import functools
@@ -638,6 +638,8 @@ def _bytes_to_base64_data(data: bytes) -> str:
     b64 = b64encode(data).decode('ascii')
     return fmt.format(mime=mime, data=b64)
 
+def _base64_to_bytes(data: str) -> bytes:
+    return b64decode(data.encode('ascii'))
 
 def _is_submodule(parent: str, child: str) -> bool:
     return parent == child or child.startswith(parent + '.')
