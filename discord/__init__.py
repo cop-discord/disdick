@@ -10,10 +10,10 @@ A basic wrapper for the Discord API.
 """
 
 __title__ = 'discord'
-__author__ = 'Rapptz'
+__author__ = 'cop-discord/Rapptz'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2015-present Rapptz'
-__version__ = '2.3.0a'
+__version__ = '2.4.0'
 
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
 
