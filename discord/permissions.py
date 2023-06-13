@@ -433,6 +433,10 @@ class Permissions(BaseFlags):
     def manage_server(self) -> int:
         return 1 << 5
 
+    @flag_value
+    def manage_members(self) -> int:
+        return 1 << 27
+
     @make_permission_alias('read_messages')
     def view_channel(self) -> int:
         """:class:`bool`: An alias for :attr:`read_messages`.
