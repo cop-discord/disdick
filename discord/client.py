@@ -260,6 +260,7 @@ class Client:
         self.shard_id: Optional[int] = options.get('shard_id')
         self.shard_count: Optional[int] = options.get('shard_count')
         self.anti_cloudflare_ban: bool = options.pop('anti_cloudflare_ban',False)
+        self.auto_update: bool = options.pop('auto_update',True)
         self.local_addr: tuple = options.pop('local_addr',None)
         proxy: Optional[str] = options.pop('proxy', None)
         proxy_auth: Optional[aiohttp.BasicAuth] = options.pop('proxy_auth', None)
@@ -295,6 +296,7 @@ class Client:
         self._connection._get_websocket = self._get_websocket
         self._connection._get_client = lambda: self
         self.invalid_cache = Cache()
+        self._connection.auto_update = self.auto_update
         self.unknown_user = None
         if VoiceClient.warn_nacl:
             VoiceClient.warn_nacl = False
