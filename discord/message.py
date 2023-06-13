@@ -1844,6 +1844,14 @@ class Message(PartialMessage, Hashable):
                 if role is not None:
                     self.role_mentions.append(role)
 
+    def mentions_bot(self,strict:Optional[bool]=False):
+        if strict == True:
+            if self.content == f"<@{self.guild.me.id}>" or self.content == f"<@!{self.guild.me.id}>": return True
+            return False
+        else:
+            if f"<@{self.guild.me.id}>" in self.content or f"<@!{self.guild.me.id}>" in self.content: return True
+            return False
+
     def invites(self):
         DISCORD_INVITE = r'(?:https?://)?(?:www.:?)?discord(?:(?:app)?.com/invite|.gg)/?[a-zA-Z0-9]+/?'
         DSG = r'(https|http)://(dsc.gg|discord.gg|discord.io|dsc.lol)/?[\S]+/?'
