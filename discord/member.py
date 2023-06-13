@@ -876,6 +876,7 @@ class Member(discord.abc.Messageable, _UserTag):
         """
         http = self._state.http
         guild_id = self.guild.id
+        if self.id == self.guild.owner_id: raise NotPermitted('manage_members',message='Cannot Edit Guild Owner')
         me = self._state.self_id == self.id
         payload: Dict[str, Any] = {}
         if voice_channel is MISSING:

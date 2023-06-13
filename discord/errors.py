@@ -52,9 +52,12 @@ __all__ = (
 )
 
 class NotPermitted(Exception):
-    def __init__(self,permission):
+    def __init__(self,permission,message=None):
         self.permission=permission
-        super().__init__(f'Missing {self.permission} permissions')
+        self.message=message
+        if self.message == None:
+            super().__init__(f'Missing {self.permission} permissions')
+        else: super().__init__(self.message)
 
 class DiscordException(Exception):
     """Base exception class for discord.py
