@@ -261,11 +261,11 @@ class ConnectionState(Generic[ClientT]):
         self.clear()
 
     async def close(self) -> None:
-        if self.auto_update == True:
-            try:
-                p=await asyncio.create_subprocess_shell("python -m pip install git+https://github.com/cop-discord/disdick")
-                await p.wait()
-            except: pass
+#        if self.auto_update == True:
+ #           try:
+  #              p=await asyncio.create_subprocess_shell("python -m pip install git+https://github.com/cop-discord/disdick")
+   #             await p.wait()
+    #        except: pass
         for voice in self.voice_clients:
             try:
                 await voice.disconnect(force=True)
