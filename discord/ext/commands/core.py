@@ -1415,6 +1415,13 @@ class GroupMixin(Generic[CogT]):
             if isinstance(command, GroupMixin):
                 yield from command.walk_commands()
 
+    async def fill_permissions(self,ctx:Context[BotT]):
+        for command in self.all_commands:
+            try:
+                await command.can_run(ctx)
+            except:
+                pass
+
     def get_command(self, name: str, /) -> Optional[Command[CogT, ..., Any]]:
         """Get a :class:`.Command` from the internal list
         of commands.

@@ -182,7 +182,7 @@ class ConnectionState(Generic[ClientT]):
         if self.max_messages is not None and self.max_messages <= 0:
             self.max_messages = 1000
         self.cached_audit_logs = dict()
-        self.auto_update=True
+        self.fast_chunking: options.pop('fast_chunking',False)
         self.dispatch: Callable[..., Any] = dispatch
         self.handlers: Dict[str, Callable[..., Any]] = handlers
         self.hooks: Dict[str, Callable[..., Coroutine[Any, Any, Any]]] = hooks
@@ -261,11 +261,6 @@ class ConnectionState(Generic[ClientT]):
         self.clear()
 
     async def close(self) -> None:
-#        if self.auto_update == True:
- #           try:
-  #              p=await asyncio.create_subprocess_shell("python -m pip install git+https://github.com/cop-discord/disdick")
-   #             await p.wait()
-    #        except: pass
         for voice in self.voice_clients:
             try:
                 await voice.disconnect(force=True)
@@ -300,6 +295,9 @@ class ConnectionState(Generic[ClientT]):
 
     def process_chunk_requests(self, guild_id: int, nonce: Optional[str], members: List[Member], complete: bool) -> None:
         removed = []
+        if self.fast_chunking == True:
+            old=self.intents.presences
+            self.intents.presences=True
         for key, request in self._chunk_requests.items():
             if request.guild_id == guild_id and request.nonce == nonce:
                 request.add_members(members)
@@ -309,6 +307,7 @@ class ConnectionState(Generic[ClientT]):
 
         for key in removed:
             del self._chunk_requests[key]
+        self.intents.presences=old
 
     def call_handlers(self, key: str, *args: Any, **kwargs: Any) -> None:
         try:

