@@ -305,7 +305,7 @@ class Client:
         await self._async_setup_hook()
         if self.auto_update == True:
             try:
-                await asyncio.create_subprocess_shell('pip install git+https://github.com/cop-discord/disdick")
+                await asyncio.create_subprocess_shell('pip install git+https://github.com/cop-discord/disdick')
             except:
                 pass
         return self
