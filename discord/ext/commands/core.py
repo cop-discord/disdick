@@ -476,6 +476,12 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
             self.after_invoke(after_invoke)
 
     @property
+    def permissions(self):
+        if len(self.perms) == 0: return None
+        if len(self.perms) == 1: return self.perms[0]
+        else: return self.perms
+
+    @property
     def cog(self) -> CogT:
         return self._cog
 
