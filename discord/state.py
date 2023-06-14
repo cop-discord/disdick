@@ -182,7 +182,7 @@ class ConnectionState(Generic[ClientT]):
         if self.max_messages is not None and self.max_messages <= 0:
             self.max_messages = 1000
         self.cached_audit_logs = dict()
-        self.fast_chunking: options.pop('fast_chunking',False)
+        self.fast_chunking: Optional[bool] = options.pop('fast_chunking',False)
         self.dispatch: Callable[..., Any] = dispatch
         self.handlers: Dict[str, Callable[..., Any]] = handlers
         self.hooks: Dict[str, Callable[..., Coroutine[Any, Any, Any]]] = hooks
@@ -307,7 +307,7 @@ class ConnectionState(Generic[ClientT]):
 
         for key in removed:
             del self._chunk_requests[key]
-        self.intents.presences=old
+        if self.fast_chunking == True: self.intents.presences=old
 
     def call_handlers(self, key: str, *args: Any, **kwargs: Any) -> None:
         try:
