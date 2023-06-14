@@ -381,9 +381,6 @@ class Cog(metaclass=CogMeta):
 
         return self
 
-    #def __str__(self): -> str:
-    #    return self.__cog_name__
-
     def get_commands(self) -> List[Command[Self, ..., Any]]:
         r"""Returns the commands that are defined inside this cog.
 
