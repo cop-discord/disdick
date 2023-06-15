@@ -477,6 +477,7 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
 
     @property
     def permissions(self):
+        if self.perms == None: return None
         if len(self.perms) == 0: return None
         if len(self.perms) == 1: return self.perms[0]
         else: return self.perms
