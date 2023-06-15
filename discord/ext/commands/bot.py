@@ -884,9 +884,10 @@ class BotBase(GroupMixin[None]):
         return types.MappingProxyType(self.__cogs)
 
     async def fill(self,ctx:Context[BotT]):
-        for v in self.walk_commands():
-            await v.can_run(ctx)
-        self.filled=True
+        for v in ctx.bot.walk_commands():
+            if not v.permissions:
+                await v.can_run(ctx)
+        ctx.bot.filled=True
         return True
     # extensions
 
