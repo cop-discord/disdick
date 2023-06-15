@@ -187,7 +187,7 @@ class BotBase(GroupMixin[None]):
         self.owner_ids: Optional[Collection[int]] = options.get('owner_ids', set())
         self.strip_after_prefix: bool = options.get('strip_after_prefix', False)
 
-        self.before_invoke(self.fill)
+        self.check(self.fill)
 
         if self.owner_id and self.owner_ids:
             raise TypeError('Both owner_id and owner_ids are set.')
