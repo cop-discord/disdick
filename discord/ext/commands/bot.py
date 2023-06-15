@@ -885,18 +885,18 @@ class BotBase(GroupMixin[None]):
 
     async def fill(self,ctx:Context[BotT]):
         if self.filled is False:
-            for command in bot.walk_commands:
+            for command in bot.walk_commands():
                 checks=command.checks
                 if not checks:
                     continue
                 for check in checks:
                     ctx.permissions.value=0
                     try: 
-                        return ", ".join(check(ctx).cr_frame.f_locals['perms'].keys())
+                        command.permissions = ", ".join(check(ctx).cr_frame.f_locals['perms'].keys())
                     except commands.MissingPermissions as err:
-                        return ", ".join([perm for perm in err.missing_permissions])
+                        command.permissions = ", ".join([perm for perm in err.missing_permissions])
         self.filled=True
-        return self.filled
+        return True
 
     # extensions
 
