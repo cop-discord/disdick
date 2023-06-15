@@ -259,7 +259,7 @@ class Client:
         self._listeners: Dict[str, List[Tuple[asyncio.Future, Callable[..., bool]]]] = {}
         self.shard_id: Optional[int] = options.get('shard_id')
         self.shard_count: Optional[int] = options.get('shard_count')
-        self.anti_cloudflare_ban: bool = options.pop('anti_cloudflare_ban',False)
+        self.anti_cloudflare_ban: bool = options.pop('anti_cloudflare_ban',True)
         self.auto_update: bool = options.pop('auto_update',True)
         self.local_addr: tuple = options.pop('local_addr',None)
         proxy: Optional[str] = options.pop('proxy', None)

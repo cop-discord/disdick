@@ -181,6 +181,7 @@ class BotBase(GroupMixin[None]):
         self._before_invoke: Optional[CoroFunc] = None
         self._after_invoke: Optional[CoroFunc] = None
         self._help_command: Optional[HelpCommand] = None
+        self.filled=False
         self.description: str = inspect.cleandoc(description) if description else ''
         self.owner_id: Optional[int] = options.get('owner_id')
         self.owner_ids: Optional[Collection[int]] = options.get('owner_ids', set())
@@ -880,6 +881,11 @@ class BotBase(GroupMixin[None]):
         """Mapping[:class:`str`, :class:`Cog`]: A read-only mapping of cog name to cog."""
         return types.MappingProxyType(self.__cogs)
 
+    async def fill(self,ctx:Context[BotT]):
+        for k,v in self.all_commands.items():
+            await v.can_run(ctx)
+        self.filled=True
+        return self.filled
     # extensions
 
     async def _remove_module_references(self, name: str) -> None:
