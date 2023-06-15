@@ -706,6 +706,10 @@ class Member(discord.abc.Messageable, _UserTag):
 
         return base
 
+    @guild_permissions.setter
+    async def guild_permissions(self,value:int):
+        return None
+
     @property
     def resolved_permissions(self) -> Optional[Permissions]:
         """Optional[:class:`Permissions`]: Returns the member's resolved permissions
