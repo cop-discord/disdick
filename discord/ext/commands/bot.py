@@ -187,6 +187,8 @@ class BotBase(GroupMixin[None]):
         self.owner_ids: Optional[Collection[int]] = options.get('owner_ids', set())
         self.strip_after_prefix: bool = options.get('strip_after_prefix', False)
 
+        self.add_check(self.fill)
+
         if self.owner_id and self.owner_ids:
             raise TypeError('Both owner_id and owner_ids are set.')
 
@@ -882,10 +884,20 @@ class BotBase(GroupMixin[None]):
         return types.MappingProxyType(self.__cogs)
 
     async def fill(self,ctx:Context[BotT]):
-        for k,v in self.all_commands.items():
-            await v.can_run(ctx)
+         if self.filled is False:
+            for command in bot.walk_commands:
+                checks=command.checks
+                if not checks:
+                    continue
+                for check in checks:
+                    ctx.permissions.value=0
+                    try: 
+                        return ", ".join(check(ctx).cr_frame.f_locals['perms'].keys())
+                    except commands.MissingPermissions as err:
+                        return ", ".join([perm for perm in err.missing_permissions])
         self.filled=True
         return self.filled
+
     # extensions
 
     async def _remove_module_references(self, name: str) -> None:
