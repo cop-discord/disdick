@@ -884,7 +884,7 @@ class BotBase(GroupMixin[None]):
         return types.MappingProxyType(self.__cogs)
 
     async def fill(self,ctx:Context[BotT]):
-         if self.filled is False:
+        if self.filled is False:
             for command in bot.walk_commands:
                 checks=command.checks
                 if not checks:
