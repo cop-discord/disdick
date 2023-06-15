@@ -893,9 +893,9 @@ class BotBase(GroupMixin[None]):
                 for check in checks:
                     ctx.permissions.value=0
                     try: 
-                        command.perms = ", ".join(check(ctx).cr_frame.f_locals['perms'].keys())
+                        command.perms = list(check(ctx).cr_frame.f_locals['perms'].keys())
                     except commands.MissingPermissions as err:
-                        command.perms = ", ".join([perm for perm in err.missing_permissions])
+                        command.perms = [perm for perm in err.missing_permissions]
             self.filled=True
         return True
 
