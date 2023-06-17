@@ -883,12 +883,24 @@ class BotBase(GroupMixin[None]):
         """Mapping[:class:`str`, :class:`Cog`]: A read-only mapping of cog name to cog."""
         return types.MappingProxyType(self.__cogs)
 
-    async def fill(self,ctx:Context[BotT]):
-        # for v in ctx.bot.walk_commands():
-        #     if not v.permissions:
-        #         await v.can_run(ctx)
-        # ctx.bot.filled=True
+    async def fill(self, ctx: Context[BotT]):
+        if self.filled is False:
+            for command in self.walk_commands():
+                if checks := command.checks:
+                    for check in checks:
+                        if " has_permissions" in str(check):
+                            ctx.permissions.value = 0
+
+                            try:
+                                command.perms = list(check(ctx).cr_frame.f_locals['perms'].keys())
+                            
+                            except commands.MissingPermissions as err:
+                                command.perms = err.missing_permissions
+
+            self.filled = True
+            
         return True
+
     # extensions
 
     async def _remove_module_references(self, name: str) -> None:
