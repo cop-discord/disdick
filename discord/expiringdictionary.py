@@ -48,7 +48,7 @@ class ExpiringDictionary:
         else:
             return 0
 
-	async def sadd(self,key:str,value:Any,position:int=0,expiration:int=0):
+	async def sadd(self,key:str,*value:Any,position:int=0,expiration:int=0):
 		if key in futures: await self.do_cancel(key)
 		if key in self.dict:
 			if not isinstance(self.dict[key],list):
@@ -64,7 +64,7 @@ class ExpiringDictionary:
 			self.futures[key]=future
 		return 1
 
-	async def sismember(self,key:str,value:Any):
+	async def sismember(self,key:str,*value:Any):
 		if key not in self.dict: return False
 		if value in self.dict[key]: return True
 		else: return False
