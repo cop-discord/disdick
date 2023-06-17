@@ -2,8 +2,8 @@ import asyncio,datetime,time
 from typing import Any
 
 class InvalidOperation(Exception):
-	def __init__(self,message:str):
-		super().__init__(message)
+    def __init__(self,message:str):
+        super().__init__(message)
 
 
 class ExpiringDictionary:
@@ -48,41 +48,37 @@ class ExpiringDictionary:
         else:
             return 0
 
-	async def sadd(self,key:str,*value:Any,position:int=0,expiration:int=0):
-		if key in futures: await self.do_cancel(key)
-		if key in self.dict:
-			if not isinstance(self.dict[key],list):
-				raise InvalidOperation(f"Key {key} is already in the storage and the type isnt a list")
-			if value in self.dict[key]:
-				return 0
-			self.dict[key].insert(position,value)
-		else:
-			self.dict[key]=[]
-			self.dict[key].insert(position,value)
-		if expiration != 0:
-			future=asyncio.ensure_future(self.do_expiration(key,expiration))
-			self.futures[key]=future
-		return 1
+    async def sadd(self,key:str,*value:Any,position:int=0,expiration:int=0):
+        if key in futures: await self.do_cancel(key)
+        if key in self.dict:
+            if not isinstance(self.dict[key],list): raise InvalidOperation(f"Key {key} is already in the storage and the type isnt a list")
+            if value in self.dict[key]: return 0
+            self.dict[key].insert(position,value)
+        else:
+            self.dict[key]=[]
+            self.dict[key].insert(position,value)
+        if expiration != 0:
+            future=asyncio.ensure_future(self.do_expiration(key,expiration))
+            self.futures[key]=future
+        return 1
 
-	async def sismember(self,key:str,*value:Any):
-		if key not in self.dict: return False
-		if value in self.dict[key]: return True
-		else: return False
+    async def sismember(self,key:str,*value:Any):
+        if key not in self.dict: return False
+        if value in self.dict[key]: return True
+        else: return False
 
-	async def smembers(self,key:str):
-		if key in self.dict:
-			if isinstance(self.dict[key],list):
-				return set(self.dict[key])
-			else:
-				return None
-		return None
+    async def smembers(self,key:str):
+        if key in self.dict:
+            if isinstance(self.dict[key],list): return set(self.dict[key])
+            else: return None
+        return None
 
-	async def srem(self,key:str,value:Any):
-		if key not in self.dict: return 0
-		if not isinstance(self.dict[key],list): return 0
-		if value not in self.dict[key]: return 0
-		self.dict[key].remove(value)
-		return 1
+    async def srem(self,key:str,value:Any):
+        if key not in self.dict: return 0
+        if not isinstance(self.dict[key],list): return 0
+        if value not in self.dict[key]: return 0
+        self.dict[key].remove(value)
+        return 1
 
     async def keys(self):
         return list(self.dict.keys())
