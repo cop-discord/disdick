@@ -1,6 +1,11 @@
 import asyncio,datetime,time
 from typing import Any
 
+class InvalidOperation(Exception):
+	def __init__(self,message:str):
+		super().__init__(message)
+
+
 class ExpiringDictionary:
     def __init__(self):
         self.dict={}
