@@ -894,11 +894,11 @@ class BotBase(GroupMixin[None]):
                             try:
                                 command.perms = list(check(ctx).cr_frame.f_locals['perms'].keys())
                             
-                            except commands.MissingPermissions as err:
+                            except errors.MissingPermissions as err:
                                 command.perms = err.missing_permissions
 
             self.filled = True
-            
+
         return True
 
     # extensions
