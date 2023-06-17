@@ -597,7 +597,7 @@ class Member(discord.abc.Messageable, _UserTag):
 
         .. versionadded:: 2.0
         """
-        return self.guild_avatar or self._user.avatar or self._user.default_avatar
+        return self._user.avatar or self._user.default_avatar
 
     @property
     def guild_avatar(self) -> Optional[Asset]:

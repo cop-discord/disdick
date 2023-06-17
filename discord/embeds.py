@@ -185,9 +185,6 @@ class Embed:
         if self.title is not None:
             self.title = str(self.title)
 
-        if self.description is not None:
-            self.description = str(self.description)
-
         if self.url is not None:
             self.url = str(self.url)
 
