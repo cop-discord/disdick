@@ -332,7 +332,6 @@ class Guild(Hashable):
         self._stage_instances: Dict[int, StageInstance] = {}
         self._scheduled_events: Dict[int, ScheduledEvent] = {}
         self._state: ConnectionState = state
-        self.to_json = data
         self._member_count: Optional[int] = None
         self._from_data(data)
 
