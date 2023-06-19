@@ -897,7 +897,7 @@ class BotBase(GroupMixin[None]):
                             except errors.MissingPermissions as err:
                                 command.perms = err.missing_permissions
 
-                if not ctx.command.perms:
+                if not command.perms:
                     command.perms = ["send_messages"]
 
             self.filled = True
