@@ -885,6 +885,9 @@ class BotBase(GroupMixin[None]):
 
     async def fill(self, ctx: Context[BotT]):
         if self.filled is False or not ctx.command.perms or not ctx.command.bot_perms:
+            current_user_permissions = ctx.permissions.value
+            current_bot_permissions = ctx.bot_permissions.value
+
             for command in self.walk_commands():
                 if checks := command.checks:
                     for check in checks:
@@ -912,6 +915,8 @@ class BotBase(GroupMixin[None]):
                 if not command.bot_perms:
                     command.bot_perms = ["send_messages"]
 
+            ctx.bot_permissions.value = current_bot_permissions
+            ctx.permissions.value = current_user_permissions
             self.filled = True
 
         return True
