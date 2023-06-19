@@ -408,8 +408,6 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
         self.perms=[]
         self.bot_perms=[]
         self.help: Optional[str] = help_doc
-        self.user_permissions: Optional[str] = kwargs.get('user_permissions')
-        self.bot_permissions: Optional[str] = kwargs.get('bot_permissions')
         self.brief: Optional[str] = kwargs.get('brief')
         self.usage: Optional[str] = kwargs.get('usage')
         self.rest_is_raw: bool = kwargs.get('rest_is_raw', False)
@@ -2204,7 +2202,7 @@ def has_permissions(**perms: bool) -> Check[Any]:
             await ctx.send('You can manage messages.')
 
     """
-    
+
     invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
     if invalid:
         raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
