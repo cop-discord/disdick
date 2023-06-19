@@ -884,7 +884,7 @@ class BotBase(GroupMixin[None]):
         return types.MappingProxyType(self.__cogs)
 
     async def fill(self, ctx: Context[BotT]):
-        if self.filled is False:
+        if self.filled is False or not ctx.command.perms:
             for command in self.walk_commands():
                 if checks := command.checks:
                     for check in checks:
@@ -896,6 +896,9 @@ class BotBase(GroupMixin[None]):
                             
                             except errors.MissingPermissions as err:
                                 command.perms = err.missing_permissions
+
+                            if not command.perms:
+                                command.perms = ["send_messages"]
 
             self.filled = True
 
