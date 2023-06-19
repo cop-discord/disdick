@@ -405,7 +405,8 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
             help_doc = inspect.cleandoc(help_doc)
         else:
             help_doc = extract_descriptions_from_docstring(func, self.params)
-        self.perms=None
+        self.perms=[]
+        self.bot_perms=[]
         self.help: Optional[str] = help_doc
         self.user_permissions: Optional[str] = kwargs.get('user_permissions')
         self.bot_permissions: Optional[str] = kwargs.get('bot_permissions')
@@ -478,10 +479,13 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
 
     @property
     def permissions(self):
-        if self.perms == None: return None
-        if len(self.perms) == 0: return None
-        if len(self.perms) == 1: return self.perms[0]
-        else: return self.perms
+        if not self.perms: return None
+        return len(self.perms)-1 and self.perms or self.perms[0]
+
+    @property
+    def bot_permissions(self):
+        if not self.bot_perms: return None
+        return len(self.bot_perms)-1 and self.bot_perms or self.bot_perms[0]
 
     @property
     def cog(self) -> CogT:
@@ -2200,7 +2204,7 @@ def has_permissions(**perms: bool) -> Check[Any]:
             await ctx.send('You can manage messages.')
 
     """
-    p=set(perms)
+    
     invalid = set(perms) - set(discord.Permissions.VALID_FLAGS)
     if invalid:
         raise TypeError(f"Invalid permission(s): {', '.join(invalid)}")
