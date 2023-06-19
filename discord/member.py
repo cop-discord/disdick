@@ -886,7 +886,8 @@ class Member(discord.abc.Messageable, _UserTag):
         payload: Dict[str, Any] = {}
         if voice_channel is MISSING:
             if not getattr(self.guild.me.guild_permissions, "manage_members"): raise NotPermitted('manage_members')
-            if self.guild.roles.index(self.guild.me.top_role) <= self.guild.roles.index(self.top_role): raise NotPermitted('higher_role')
+            # if self.guild.roles.index(self.guild.me.top_role) <= self.guild.roles.index(self.top_role): raise NotPermitted('higher_role')
+            # (remvoved by kuromi) there seems to be no way of checking this, both the index and .position is inaccurate
         if nick is not MISSING:
             nick = nick or ''
             if me:
