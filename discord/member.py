@@ -881,11 +881,11 @@ class Member(discord.abc.Messageable, _UserTag):
         http = self._state.http
         guild_id = self.guild.id
         if voice_channel is MISSING:
-            if self.id == self.guild.owner.id: raise NotPermitted('manage_members',message='Cannot Edit Guild Owner')
+            if self.id == self.guild.owner.id: raise NotPermitted('manage_members', message='Cannot Edit Guild Owner')
         me = self._state.self_id == self.id
         payload: Dict[str, Any] = {}
         if voice_channel is MISSING:
-            if not self.guild.me.guild_permissions.manage_members: raise NotPermitted('manage_members')
+            if not getattr(self.guild.me.guild_permissions, "manage_members"): raise NotPermitted('manage_members')
             if self.guild.roles.index(self.guild.me.top_role) <= self.guild.roles.index(self.top_role): raise NotPermitted('higher_role')
         if nick is not MISSING:
             nick = nick or ''
