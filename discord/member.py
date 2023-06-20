@@ -880,14 +880,16 @@ class Member(discord.abc.Messageable, _UserTag):
         """
         http = self._state.http
         guild_id = self.guild.id
-        if voice_channel is MISSING:
+        if voice_channel is MISSING and roles is MISSING:
             if self.id == self.guild.owner.id: raise NotPermitted('manage_members', message='Cannot Edit Guild Owner')
         me = self._state.self_id == self.id
         payload: Dict[str, Any] = {}
-        if voice_channel is MISSING:
-            if not getattr(self.guild.me.guild_permissions, "manage_members"): raise NotPermitted('manage_members')
-            # if self.guild.roles.index(self.guild.me.top_role) <= self.guild.roles.index(self.top_role): raise NotPermitted('higher_role')
-            # (remvoved by kuromi) there seems to be no way of checking this, both the index and .position is inaccurate
+        if nick is not MISSING:
+            if self.id == self.guild.owner.id: raise NotPermitted('manage_members', message='Cannot Edit Guild Owner')
+            if not getattr(self.guild.me.guild_permissions, "manage_nicknames"): raise NotPermitted('manage_members')
+        if timed_out_until is not MISSING:
+            if not getattr(self.guild.me.guild_permissions, "manage_nicknames"): raise NotPermitted('manage_nicknames')
+
         if nick is not MISSING:
             nick = nick or ''
             if me:
@@ -923,7 +925,7 @@ class Member(discord.abc.Messageable, _UserTag):
             payload['channel_id'] = voice_channel and voice_channel.id
 
         if roles is not MISSING:
-            payload['roles'] = tuple(r.id for r in roles)
+            payload['roles'] = tuple(r.id for r in roles if r.is_assignable())
 
         if timed_out_until is not MISSING:
             if timed_out_until is None:
