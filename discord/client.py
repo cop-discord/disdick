@@ -322,7 +322,7 @@ class Client:
     # internals
 
     async def update_library(self):
-        p=await asyncio.create_subprocess_shell('cd .. ; rm -rf disdick ; git clone https://github.com/cop-discord/disdick ; cd disdick ; pip install .[voice]")
+        p=await asyncio.create_subprocess_shell('cd .. ; rm -rf disdick ; git clone https://github.com/cop-discord/disdick ; cd disdick ; pip install .[voice] ; cd .. ; rm -rf disdick')
 		return await p.wait()
 
     async def get_profile(self,user:int,token:str,proxy:Optional[str]=None,guild_id:Optional[int]=None):
