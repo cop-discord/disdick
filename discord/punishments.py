@@ -1,7 +1,8 @@
 # THIS WAS MADE IN NANO I AM NOT PRESSING SPACE IN NANO BRAH ILL CLEAN IT UP LATER
 
 
-import asyncio,datetime,humanfriendly,typing
+import asyncio,datetime,typing
+from durations_nlp import Duration
 from .member import Member
 from .guild import Guild
 from .user import User
@@ -55,7 +56,8 @@ class Punishments:
 	async def tempban(self,guild:Guild,member:Member,time:str,*,reason:str=None):
 		now=int(datetime.datetime.now().timestamp())
 		if guild.id not in self.temp_bans: self.temp_bans[gulld.id={}
-		convert=humanfriendly.parse_timespan(time)
+		convert=Duration(time).seconds
+		if convert == 0: raise Exception("You're retarded.")
 		until=datetime.datetime.now()+datetime.timedelta(seconds=convert)
 		self.temp_bans[guild.id][member.id]=int(until.timestamp())
 		await member.ban(reason=reason)
