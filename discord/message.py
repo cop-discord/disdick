@@ -1867,7 +1867,7 @@ class Message(PartialMessage, Hashable):
             - For non-strict matching, the bot's mention is checked to be present among the mentions in the message.
 
         """
-        if strict == True:
+        if strict is True:
             return self.content in (f"<@{self.guild.me.id}>", f"<@!{self.guild.me.id}>")
         
         return self.guild.me.id in utils.find_mentions(self.content)
