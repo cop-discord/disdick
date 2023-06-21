@@ -1892,7 +1892,7 @@ class Message(PartialMessage, Hashable):
         """
         return utils.find_invites(self.content)
 
-    def mentions(self) -> List[Self, ...]:
+    def user_mentions(self) -> List[Self, ...]:
         return [(self.guild.get_member(id) or self._state.get_user(id)) for id in utils.find_mentions(self.content) ]              
                     
     def _handle_components(self, data: List[ComponentPayload]) -> None:
