@@ -1872,27 +1872,64 @@ class Message(PartialMessage, Hashable):
         
         return self.guild.me.id in utils.find_mentions(self.content)
 
-
+    @property
     def invites(self) -> List[str, ...]:
         """
-        This method is used to extract invite links from the current message content.
+        This property returns invite links from the current message content.
 
         Returns:
             List[str]: A list of found invite links in the message content.
 
         Examples:
-            >>> message.invites()
+            >>> message.invites
             ['discord.gg/example', 'discord.gg/example2']
 
         Note:
-            - The method relies on the `discord.utils.find_invites` function to locate and extract invite links.
+            - The property utilizes the `discord.utils.find_invites` function to locate and extract invite links.
             - The extracted invite links are returned as a list.
 
         """
         return utils.find_invites(self.content)
 
-    def user_mentions(self) -> List[Self, ...]:
-        return [(self.guild.get_member(id) or self._state.get_user(id)) for id in utils.find_mentions(self.content) ]              
+    @property
+    def emojis(self) -> List[str, ...]:
+        """
+        This property returns a list of emojis from the current message content.
+
+        Returns:
+            List[str]: A list of found emojis in the message content.
+
+        Examples:
+            >>> message.emojis
+            ['😃', '🌟']
+
+        Note:
+            - The property utilizes the `discord.utils.find_emojis` function to locate and extract emojis.
+            - The extracted emojis are returned as a list of strings.
+
+        """
+        return utils.find_emojis(self.content)
+
+
+    @property
+    def user_mentions(self) -> List[Union[User, Self], ...]:
+        """
+        This property returns a list of user mentions found in the current message content.
+
+        Returns:
+            List[Union[User, Member]]: A list of User or Member objects representing the mentioned users.
+
+        Examples:
+            >>> message.user_mentions
+            [<User ...>, <User ...>]
+
+        Note:
+            - The property utilizes the `discord.utils.find_mentions` function to locate mentions in the message content.
+            - For each mentioned user ID, it attempts to retrieve the associated User object using `Guild.get_member` or `ConnectionState.get_user`.
+            - If a User or Member object cannot be retrieved, `None` is included in the list.
+
+        """
+        return [(self.guild.get_member(id) or self._state.get_user(id)) for id in utils.find_mentions(self.content)]              
                     
     def _handle_components(self, data: List[ComponentPayload]) -> None:
         self.components = []
