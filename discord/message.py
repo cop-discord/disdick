@@ -1868,11 +1868,10 @@ class Message(PartialMessage, Hashable):
 
         """
         if strict == True:
-            if self.content == f"<@{self.guild.me.id}>" or self.content == f"<@!{self.guild.me.id}>": return True
-        else:
-            return self.guild.me.id in utils.find_mentions(self.content)
+            return self.content in (f"<@{self.guild.me.id}>", f"<@!{self.guild.me.id}>")
+        
+        return self.guild.me.id in utils.find_mentions(self.content)
 
-        return False
 
     def invites(self) -> List[str, ...]:
         """
