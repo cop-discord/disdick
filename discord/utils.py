@@ -55,6 +55,7 @@ from typing import (
     overload,
     TYPE_CHECKING,
 )
+from . import regex
 import unicodedata
 from base64 import b64encode,b64decode
 from bisect import bisect_left
@@ -87,6 +88,9 @@ __all__ = (
     'time_snowflake',
     'find',
     'get',
+    'find_emojis',
+    'find_invites',
+    'find_mentions',
     'sleep_until',
     'utcnow',
     'remove_markdown',
@@ -604,6 +608,57 @@ def get(iterable: _Iter[T], /, **attrs: Any) -> Union[Optional[T], Coro[Optional
         if hasattr(iterable, '__aiter__')  # isinstance(iterable, collections.abc.AsyncIterable) is too slow
         else _get(iterable, **attrs)  # type: ignore
     )
+
+
+def find_emojis(text: str) -> List[str, ...]:
+    """
+    This function is used to locate and extract all emojis present in a given text.
+
+    Arguments:
+        text (str): The input text where emojis will be searched.
+
+    Returns:
+        List[str]: A list of found emojis, both custom and unicode.
+
+    Examples:
+        >>> find_emojis("Hello! 😃🌟")
+        ['😃', '🌟']
+    """
+    return regex.custom_emoji.findall(text) + regex.unicode_emoji.findall(text)
+    
+    
+def find_invites(text: str) -> List[str, ...]:
+    """
+    This function is used to find every invite link present in a given text.
+
+    Arguments:
+        text (str): The input text where invite links will be searched.
+
+    Returns:
+        List[str]: A list of found invite links.
+
+    Examples:
+        >>> find_invites("Join these servers! discord.gg/example discord.gg/example2")
+        ['discord.gg/example', 'discord.gg/example2]
+    """
+    return regex.discord_invite.findall(text)
+
+
+def find_mentions(text: str) -> List[int, ...]:
+    """
+    This function is used to find every user mention present in a given text.
+
+    Arguments:
+        text (str): The input text where user mentions will be searched.
+
+    Returns:
+        List[int]: A list of found user mentions.
+
+    Examples:
+        >>> find_invites("Hello @aiohttp @kuromi")
+        [352190010998390796, 1109861649910874274]
+    """
+    return list(map(int, regex.user_mention.findall(text)))
 
 
 def _unique(iterable: Iterable[T]) -> List[T]:

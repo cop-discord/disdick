@@ -47,6 +47,7 @@ from .object import *
 from .reaction import *
 from . import (
     utils as utils,
+    regex as regex,
     opus as opus,
     abc as abc,
     ui as ui,

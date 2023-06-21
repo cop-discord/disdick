@@ -1844,22 +1844,56 @@ class Message(PartialMessage, Hashable):
                 if role is not None:
                     self.role_mentions.append(role)
 
-    def mentions_bot(self,strict:Optional[bool]=False):
+    def mentions_bot(self, strict: bool = False) -> bool:
+        """
+        This method is used to check if the message mentions the bot.
+
+        Arguments:
+            strict (bool, optional): A flag indicating whether strict matching should be applied. 
+                If set to True, the mention must be an exact match. If set to False (default), partial mentions are also considered.
+
+        Returns:
+            bool: True if the bot is mentioned in the message, False otherwise.
+
+        Examples:
+            >>> message.mentions_bot()
+            True
+
+            >>> message.mentions_bot(strict=True)
+            False
+
+        Note:
+            - For strict matching, the mention must be an exact match with the message content.
+            - For non-strict matching, the bot's mention is checked to be present among the mentions in the message.
+
+        """
         if strict == True:
             if self.content == f"<@{self.guild.me.id}>" or self.content == f"<@!{self.guild.me.id}>": return True
-            return False
         else:
-            if f"<@{self.guild.me.id}>" in self.content or f"<@!{self.guild.me.id}>" in self.content: return True
-            return False
+            return self.guild.me.id in utils.find_mentions(self.content)
 
-    def invites(self):
-        DISCORD_INVITE = r'(?:https?://)?(?:www.:?)?discord(?:(?:app)?.com/invite|.gg)/?[a-zA-Z0-9]+/?'
-        DSG = r'(https|http)://(dsc.gg|discord.gg|discord.io|dsc.lol)/?[\S]+/?'
-        regex1 = re.compile(DISCORD_INVITE)
-        regex2 = re.compile(DSG)
-        invites = regex1.findall(self.content)
-        invites2 = regex2.findall(self.content)
-        return invites + invites2                    
+        return False
+
+    def invites(self) -> List[str, ...]:
+        """
+        This method is used to extract invite links from the current message content.
+
+        Returns:
+            List[str]: A list of found invite links in the message content.
+
+        Examples:
+            >>> message.invites()
+            ['discord.gg/example', 'discord.gg/example2']
+
+        Note:
+            - The method relies on the `discord.utils.find_invites` function to locate and extract invite links.
+            - The extracted invite links are returned as a list.
+
+        """
+        return utils.find_invites(self.content)
+
+    def mentions(self) -> List[Self, ...]:
+        return [(self.guild.get_member(id) or self._state.get_user(id)) for id in utils.find_mentions(self.content) ]              
                     
     def _handle_components(self, data: List[ComponentPayload]) -> None:
         self.components = []
