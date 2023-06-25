@@ -3,7 +3,7 @@ aiodns
 orjson
 typing_extensions
 psutil
-humanfriendly
+durations_nlp
 
 [docs]
 sphinx==4.4.0

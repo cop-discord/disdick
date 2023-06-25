@@ -226,9 +226,8 @@ class Embed:
 
         try:
             self._colour = Colour(value=data['color'])
-        except:
-            try: self._colour = Colour.from_str(data['color'])
-            except: pass
+        except KeyError:
+            pass
 
         try:
             self._timestamp = utils.parse_time(data['timestamp'])

@@ -45,6 +45,7 @@ discord/pool.py
 discord/punishments.py
 discord/raw_models.py
 discord/reaction.py
+discord/regex.py
 discord/role.py
 discord/scheduled_event.py
 discord/shard.py
