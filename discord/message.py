@@ -220,6 +220,12 @@ class Attachment(Hashable):
     def is_voice_message(self) -> bool:
         return self.duration is not None and 'voice-message' in self.url
 
+    def is_image(self) -> bool:
+        return yarl.URL(self.url).suffix in ('.jpeg', '.png', '.gif', '.tiff', '.psd', '.pdf', '.jpg', '.raw', '.indd', '.ai', '.eps')
+
+    def is_video(self) -> bool:
+        return yarl.URL(self.url).suffix in ('.mp4', '.avchd', '.mov', '.avi', '.wmv', '.flv', '.webm', '.mp3', '.mpeg')
+
     def is_spoiler(self) -> bool:
         """:class:`bool`: Whether this attachment contains a spoiler."""
         return self.filename.startswith('SPOILER_')

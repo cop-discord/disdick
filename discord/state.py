@@ -50,6 +50,7 @@ import inspect
 
 import os
 
+from .expiringdictionary import ExpiringDictionary as Cache
 from .guild import Guild
 from .activity import BaseActivity
 from .user import User, ClientUser
@@ -187,6 +188,7 @@ class ConnectionState(Generic[ClientT]):
         self.handlers: Dict[str, Callable[..., Any]] = handlers
         self.hooks: Dict[str, Callable[..., Coroutine[Any, Any, Any]]] = hooks
         self.shard_count: Optional[int] = None
+        self.ratelimiter = Cache()
         self._ready_task: Optional[asyncio.Task] = None
         self.application_id: Optional[int] = utils._get_as_snowflake(options, 'application_id')
         self.application_flags: ApplicationFlags = utils.MISSING
