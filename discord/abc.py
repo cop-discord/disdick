@@ -1515,7 +1515,7 @@ class Messageable:
 
         channel = await self._get_channel()
         state = self._state
-        if await state.ratelimiter.ratelimit(f"ms{channel.id}", 5, 5):
+        if await state.ratelimiter.ratelimit(f"ms{channel.id}", 5, 3):
             return None
         content = str(content) if content is not None else None
         previous_allowed_mention = state.allowed_mentions
