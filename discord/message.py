@@ -28,6 +28,7 @@ import asyncio
 import datetime
 import re
 import io
+import yarl
 from os import PathLike
 from typing import (
     Dict,
