@@ -1,4 +1,4 @@
-aiohttp>=3.7.4,<4
+aiohttp>=3.7.4.post0 < 3.7
 aiodns
 humanfriendly
 orjson
