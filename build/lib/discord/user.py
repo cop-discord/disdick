@@ -508,3 +508,4 @@ class User(BaseUser, discord.abc.Messageable):
 
         state = self._state
         data: DMChannelPayload = await state.http.start_private_message(self.id)
+        return state.add_dm_channel(data)
