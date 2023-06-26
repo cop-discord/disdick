@@ -1514,6 +1514,7 @@ class Messageable:
         """
 
         channel = await self._get_channel()
+        state = self._state
         content = str(content) if content is not None else None
         previous_allowed_mention = state.allowed_mentions
 
