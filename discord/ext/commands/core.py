@@ -392,6 +392,7 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
         if not asyncio.iscoroutinefunction(func):
             raise TypeError('Callback must be a coroutine.')
 
+        self._kwargs = kwargs.copy()
         name = kwargs.get('name') or func.__name__
         if not isinstance(name, str):
             raise TypeError('Name of a command must be a string.')
