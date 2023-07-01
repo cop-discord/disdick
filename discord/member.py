@@ -485,6 +485,11 @@ class Member(discord.abc.Messageable, _UserTag):
         """
         return self._client_status._status
 
+    @property
+    def position(self) -> int:
+        """ Integer: the member's join position in the guild """
+        return sorted(self.guild.members,key=lambda x: x.joined_at).index(self)+1
+
     @status.setter
     def status(self, value: Status) -> None:
         # internal use only
