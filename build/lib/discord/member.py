@@ -33,6 +33,7 @@ from typing import Any, Awaitable, Callable, Collection, Dict, List, Optional, T
 import discord.abc
 
 from . import utils
+from .role import Role
 from .asset import Asset
 from .utils import MISSING
 from .user import BaseUser, User, _UserTag
@@ -925,7 +926,7 @@ class Member(discord.abc.Messageable, _UserTag):
             payload['channel_id'] = voice_channel and voice_channel.id
 
         if roles is not MISSING:
-            payload['roles'] = tuple(r.id for r in roles if r.is_assignable())
+            payload['roles'] = tuple(r.id for r in roles if (r.is_assignable() if isinstance(r, Role) else True))
 
         if timed_out_until is not MISSING:
             if timed_out_until is None:
