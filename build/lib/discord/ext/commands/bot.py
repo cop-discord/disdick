@@ -900,6 +900,9 @@ class BotBase(GroupMixin[None]):
                             except errors.MissingPermissions as err:
                                 command.perms = err.missing_permissions
 
+                            except:
+                                pass
+
                         elif " bot_has_permissions" in str(check):
                             ctx.bot_permissions.value = 0
 
@@ -908,6 +911,9 @@ class BotBase(GroupMixin[None]):
                             
                             except errors.BotMissingPermissions as err:
                                 command.bot_perms = err.missing_permissions
+
+                            except:
+                                pass
 
                 if not command.perms:
                     command.perms = ["send_messages"]
