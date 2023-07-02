@@ -73,6 +73,7 @@ class BaseUser(_UserTag):
         'system',
         '_public_flags',
         '_state',
+        '__original_data__'
     )
 
     if TYPE_CHECKING:
@@ -89,6 +90,7 @@ class BaseUser(_UserTag):
         _public_flags: int
 
     def __init__(self, *, state: ConnectionState, data: Union[UserPayload, PartialUserPayload]) -> None:
+        self.__original_data__ = data.copy()
         self._state = state
         self._update(data)
 
