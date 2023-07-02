@@ -344,6 +344,7 @@ class Member(discord.abc.Messageable, _UserTag):
         accent_colour: Optional[Colour]
 
     def __init__(self, *, data: MemberWithUserPayload, guild: Guild, state: ConnectionState):
+        self.__original_data__ = data.copy()
         self._state: ConnectionState = state
         self._user: User = state.store_user(data['user'])
         self.guild: Guild = guild
