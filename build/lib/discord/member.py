@@ -324,6 +324,7 @@ class Member(discord.abc.Messageable, _UserTag):
         '_state',
         '_avatar',
         '_flags',
+        '__original_data__'
     )
 
     if TYPE_CHECKING:
