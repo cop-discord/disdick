@@ -329,13 +329,14 @@ class Client:
         data=await self.http.get_profile(token=token,user_id=user_id,guild_id=guild_id,proxy=proxy)
         return WorkerUser(data)
 
-    async def add_audit_log_entry(self,guild_id: str, entry: AuditLogEntry):
+    async def add_audit_log_entry(self,guild_id: int, entry: AuditLogEntry):
         if guild_id not in self.audit_log_cache:
             self.audit_log_cache[guild_id]=deque(maxlen=self._audit_log_cache_limit)
         self.audit_log_cache[guild_id].appendleft(entry)
         return True
 
-    async def get_cached_audit_log(self, guild_id: str, action: Optional[AuditLogAction]=None, limit: Optional[int]=10):
+    async def get_cached_audit_log(self, guild_id: int, action: Optional[AuditLogAction]=None, limit: Optional[int]=10):
+        guild_id=str(guild_id)
         try:
             if guild_id in self.audit_log_cache:
                 if action:
