@@ -883,12 +883,12 @@ class BotBase(GroupMixin[None]):
         """Mapping[:class:`str`, :class:`Cog`]: A read-only mapping of cog name to cog."""
         return types.MappingProxyType(self.__cogs)
 
-    async def fill(self, ctx: Context[BotT]):
-        if self.filled is False or not ctx.command.perms or not ctx.command.bot_perms:
-            current_user_permissions = ctx.permissions.value
-            current_bot_permissions = ctx.bot_permissions.value
+    async def _fill(self, ctx: Context[BotT]):
+        current_user_permissions = ctx.permissions.value
+        current_bot_permissions = ctx.bot_permissions.value
 
-            for command in self.walk_commands():
+        for command in self.walk_commands():
+            if command.permissions is None or command.bot_permissions is None:
                 if checks := command.checks:
                     for check in checks:
                         if " has_permissions" in str(check):
@@ -899,7 +899,12 @@ class BotBase(GroupMixin[None]):
                             
                             except errors.MissingPermissions as err:
                                 command.perms = err.missing_permissions
-                            except: pass
+                            
+                            except RuntimeWarning:
+                                pass
+
+                            except Exception:
+                                pass
 
                         elif " bot_has_permissions" in str(check):
                             ctx.bot_permissions.value = 0
@@ -910,16 +915,23 @@ class BotBase(GroupMixin[None]):
                             except errors.BotMissingPermissions as err:
                                 command.bot_perms = err.missing_permissions
 
+                            except RuntimeWarning:
+                                pass
+
+                            except Exception:
+                                pass
+
                 if not command.perms:
                     command.perms = ["send_messages"]
 
                 if not command.bot_perms:
                     command.bot_perms = ["send_messages"]
 
-            ctx.bot_permissions.value = current_bot_permissions
-            ctx.permissions.value = current_user_permissions
-            self.filled = True
+        ctx.bot_permissions.value = current_bot_permissions
+        ctx.permissions.value = current_user_permissions
 
+    async def fill(self, ctx: Context[BotT]):
+        self.loop.create_task(self._fill(ctx))
         return True
 
     # extensions
