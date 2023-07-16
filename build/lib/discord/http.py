@@ -534,7 +534,7 @@ class HTTPClient:
     async def ws_connect(self, url: str, *, compress: int = 0) -> aiohttp.ClientWebSocketResponse:
         kwargs = {
             'proxy_auth': self.proxy_auth,
-            'proxy': self.proxy,
+            'proxy': self.proxy or (f'{self.s_proxy}?url={url}' if self.s_proxy else None),
             'max_msg_size': 0,
             'timeout': 30.0,
             'autoclose': False,
@@ -626,7 +626,7 @@ class HTTPClient:
         if self.s_proxy is not None and proxy is None:
             kwargs['proxy'] = f'{self.s_proxy}?url={url}'
             # testing
-            
+
         if self.proxy_auth is not None:
             kwargs['proxy_auth'] = self.proxy_auth
 
