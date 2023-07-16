@@ -488,6 +488,7 @@ class HTTPClient:
         connector: Optional[aiohttp.BaseConnector] = None,
         *,
         proxy: Optional[str] = None,
+        s_proxy: Optional[str] = None,
         anti_cloudflare_ban: bool = False,
         local_addr: tuple = None,
         redis: Any = None,
@@ -512,6 +513,7 @@ class HTTPClient:
         self._global_over: asyncio.Event = MISSING
         self.token: Optional[str] = None
         self.proxy: Optional[str] = proxy
+        self.s_proxy: Optional[str] = s_proxy
         self.invalid_ratelimiter = Cache()
         self.invalid_limit=9950
         self.anti_cloudflare_ban = anti_cloudflare_ban
@@ -621,9 +623,10 @@ class HTTPClient:
         # Proxy support
         if proxy is not None:
             kwargs['proxy'] = proxy
-        else:
-            if self.proxy is not None:
-                kwargs['proxy'] = self.proxy
+        if self.s_proxy is not None and proxy is None:
+            kwargs['proxy'] = f'{self.s_proxy}?url={url}'
+            # testing
+            
         if self.proxy_auth is not None:
             kwargs['proxy_auth'] = self.proxy_auth
 
