@@ -513,7 +513,7 @@ class HTTPClient:
         self._global_over: asyncio.Event = MISSING
         self.token: Optional[str] = None
         self.proxy: Optional[str] = proxy
-        s_proxy: Optional[str] = s_proxy
+        self.s_proxy: Optional[str] = s_proxy
         self.invalid_ratelimiter = Cache()
         self.invalid_limit=9950
         self.anti_cloudflare_ban = anti_cloudflare_ban
