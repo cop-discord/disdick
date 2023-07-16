@@ -565,7 +565,7 @@ class HTTPClient:
         route: Route,
         *,
         proxy: Optional[str] = None,
-        local_addr: Optional[tuple] = None,
+        local_addr: Optional[Tuple[str, int]] = None,
         token: Optional[str] = None,
         bypass: Optional[bool] = False,
         files: Optional[Sequence[File]] = None,
@@ -597,7 +597,7 @@ class HTTPClient:
             'User-Agent': self.user_agent,
         }
         if local_addr is not None:
-           self.connector.local_addr=local_addr
+            self.connector.local_addr=local_addr
         if token is not None:
             headers['Authorization'] = token
         else:
@@ -788,6 +788,10 @@ class HTTPClient:
                         await asyncio.sleep(1 + tries * 2)
                         continue
                     raise
+
+                finally:
+                    if local_addr is not None:
+                        self.connector.local_addr=self.local_addr
 
             if response is not None:
                 # We've run out of retries, raise.
@@ -1086,13 +1090,15 @@ class HTTPClient:
         bypass: Optional[bool]=False,
         delete_message_seconds: int = 86400,  # one day
         reason: Optional[str] = None,
+        proxy: Optional[str] = None,
+        local_addr: Optional[Tuple[str, int]]
     ) -> Response[None]:
         r = Route('PUT', '/guilds/{guild_id}/bans/{user_id}', guild_id=guild_id, user_id=user_id)
         params = {
             'delete_message_seconds': delete_message_seconds,
         }
 
-        return self.request(r, params=params, bypass=bypass, reason=reason)
+        return self.request(r, params=params, bypass=bypass, reason=reason, proxy=proxy, local_addr=local_addr)
 
     def unban(self, user_id: Snowflake, guild_id: Snowflake, *, reason: Optional[str] = None) -> Response[None]:
         r = Route('DELETE', '/guilds/{guild_id}/bans/{user_id}', guild_id=guild_id, user_id=user_id)
