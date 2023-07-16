@@ -1094,7 +1094,7 @@ class HTTPClient:
         delete_message_seconds: int = 86400,  # one day
         reason: Optional[str] = None,
         proxy: Optional[str] = None,
-        local_addr: Optional[Tuple[str, int]]
+        local_addr: Optional[Tuple[str, int]] = None
     ) -> Response[None]:
         r = Route('PUT', '/guilds/{guild_id}/bans/{user_id}', guild_id=guild_id, user_id=user_id)
         params = {
