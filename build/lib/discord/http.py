@@ -626,7 +626,7 @@ class HTTPClient:
             kwargs['proxy'] = proxy
 
         if s_proxy or self.s_proxy and proxy is not None:
-            url = f"{s_proxy}?url={url}"
+            url = f"{s_proxy or self.s_proxy}?url={url}"
 
         if self.proxy_auth is not None:
             kwargs['proxy_auth'] = self.proxy_auth
