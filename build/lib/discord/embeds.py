@@ -555,7 +555,9 @@ class Embed:
 
     def set_description(self, description: Any) -> Self:
         """Sets the description for the embed content"""
+        
         self.description = description
+        return self
 
     @property
     def fields(self) -> List[_EmbedFieldProxy]:
