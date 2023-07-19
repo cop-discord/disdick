@@ -329,6 +329,12 @@ class View:
         self._children.append(item)
         return self
 
+    def add_items(self, items: List[Item[Any]]) -> Self:
+        for item in items:
+            self.add_item(item)
+
+        return self
+
     def remove_item(self, item: Item[Any]) -> Self:
         """Removes an item from the view.
 
