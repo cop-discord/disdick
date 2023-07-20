@@ -265,7 +265,7 @@ CurrentChannel = parameter(
     displayed_default='<this channel>',
     converter=Union[TextChannel, DMChannel, Thread, VoiceChannel],
 )
-CurrentChannel._fallback = True
+
 
 
 def default_guild(ctx: Context[Any]) -> Guild:
@@ -279,6 +279,7 @@ CurrentGuild = parameter(
     displayed_default='<this server>',
     converter=GuildConverter,
 )
+CurrentGuild._fallback = True
 
 
 class Signature(inspect.Signature):
