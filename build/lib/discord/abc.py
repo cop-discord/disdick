@@ -1515,7 +1515,7 @@ class Messageable:
 
         channel = await self._get_channel()
         state = self._state
-        content = str(content) if content is not None else "\u200b"
+        content = str(content) if content else "\u200b"
         previous_allowed_mention = state.allowed_mentions
 
         if stickers is not None:
