@@ -1515,7 +1515,15 @@ class Messageable:
 
         channel = await self._get_channel()
         state = self._state
-        content = str(content) if content else "\u200b"
+        content = "\u200b" if (
+            not content 
+            and not embed 
+            and not any(bool(e) for e in embeds) 
+            and not file 
+            and not files 
+            and not stickers
+            and not bool(view)
+        ) else str(content)
         previous_allowed_mention = state.allowed_mentions
 
         if stickers is not None:

@@ -191,6 +191,9 @@ class View:
         self.__timeout_task: Optional[asyncio.Task[None]] = None
         self.__stopped: asyncio.Future[bool] = asyncio.get_running_loop().create_future()
 
+    def __bool__(self) -> bool:
+        return not not self.children
+
     def __repr__(self) -> str:
         return f'<{self.__class__.__name__} timeout={self.timeout} children={len(self._children)}>'
 
