@@ -1523,7 +1523,7 @@ class Messageable:
             and not files 
             and not stickers
             and not bool(view)
-        ) else str(content)
+        ) else str(content) if content != None else None
         previous_allowed_mention = state.allowed_mentions
 
         if stickers is not None:
