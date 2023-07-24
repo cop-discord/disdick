@@ -1517,8 +1517,8 @@ class Messageable:
         state = self._state
         content = "\u200b" if (
             not content 
-            and not embed 
-            and not any(bool(e) for e in embeds) 
+            and not bool(embed) 
+            and not (any(bool(e) for e in embeds) if embeds else False)
             and not file 
             and not files 
             and not stickers
