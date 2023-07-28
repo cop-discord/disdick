@@ -335,8 +335,11 @@ class Client:
         self.audit_log_cache[guild_id].appendleft(entry)
         return True
 
-    async def get_cached_audit_log(self, guild_id: int, action: Optional[AuditLogAction]=None, limit: Optional[int]=10):
+    async def get_cached_audit_log(self, guild_id: Union[int, str], action: Optional[AuditLogAction]=None, limit: Optional[int]=10):
         try:
+            if isinstance(guild_id, int):
+                guild_id = str(guild_id)
+
             if guild_id in self.audit_log_cache:
                 if action:
                     entries=[i for i in self.audit_log_cache[guild_id] if i.action is action]
@@ -356,7 +359,7 @@ class Client:
 
     def _get_websocket(self, guild_id: Optional[int] = None, *, shard_id: Optional[int] = None) -> DiscordWebSocket:
         return self.ws
-
+=
     def _get_state(self, **options: Any) -> ConnectionState:
         return ConnectionState(dispatch=self.dispatch, handlers=self._handlers, hooks=self._hooks, http=self.http, **options)
 

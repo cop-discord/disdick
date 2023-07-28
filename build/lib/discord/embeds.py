@@ -559,6 +559,12 @@ class Embed:
         self.description = description
         return self
 
+    def set_title(self, title: Any) -> Self:
+        """Sets the title for the embed content"""
+        
+        self.title = title
+        return self
+
     @property
     def fields(self) -> List[_EmbedFieldProxy]:
         """List[``EmbedProxy``]: Returns a :class:`list` of ``EmbedProxy`` denoting the field contents.
