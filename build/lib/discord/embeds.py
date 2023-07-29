@@ -565,6 +565,12 @@ class Embed:
         self.title = title
         return self
 
+    def set_timestamp(self, timestamp: Any) -> Self:
+        """Sets the timestamp for the embed content"""
+        
+        self.timestamp = timestamp
+        return self
+
     @property
     def fields(self) -> List[_EmbedFieldProxy]:
         """List[``EmbedProxy``]: Returns a :class:`list` of ``EmbedProxy`` denoting the field contents.
