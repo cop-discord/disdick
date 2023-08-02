@@ -577,6 +577,12 @@ class Embed:
         self.url = url
         return self
 
+    def set_color(self, color: Any) -> Self:
+        """Sets the color for the embed content"""
+        
+        self.color = color
+        return self
+
     @property
     def fields(self) -> List[_EmbedFieldProxy]:
         """List[``EmbedProxy``]: Returns a :class:`list` of ``EmbedProxy`` denoting the field contents.
