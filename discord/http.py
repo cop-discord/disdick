@@ -580,9 +580,23 @@ class HTTPClient:
         try:
             bucket_hash = self._bucket_hashes[route_key]
         except KeyError:
-            key = f'{route_key}:{route.major_parameters}'
+            if proxy != None or local_addr != None:
+                if proxy != None:
+                    ip_key = proxy
+                else:
+                    ip_key = local_addr[0]
+                key = f'{route_key}:{route.major_parameters}:{ip_key}'
+            else:
+                key = f'{route_key}:{route.major_parameters}'
         else:
-            key = f'{bucket_hash}:{route.major_parameters}'
+            if proxy != None or local_addr != None:
+                if proxy != None:
+                    ip_key = proxy
+                else:
+                    ip_key = local_addr[0]
+                key = f'{route_key}:{route.major_parameters}:{ip_key}'
+            else:
+                key = f'{bucket_hash}:{route.major_parameters}'
 
         ratelimit = self.get_ratelimit(key)
         if self.anti_cloudflare_ban == True:
