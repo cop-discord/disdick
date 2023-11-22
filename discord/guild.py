@@ -333,7 +333,17 @@ class Guild(Hashable):
         self._scheduled_events: Dict[int, ScheduledEvent] = {}
         self._state: ConnectionState = state
         self._member_count: Optional[int] = None
-        self._from_data(data)
+    
+    def to_dict(self) -> Dict[str, Any]:
+        ret: Dict[str, Any] = {}
+        for attr in self.__slots__:
+            value = getattr(self, attr, None)
+            if value is None:
+                continue
+            if isinstance(value, dict) and len(value) == 0:
+                continue
+            ret[attr] = value
+        return ret
 
     def _add_channel(self, channel: GuildChannel, /) -> None:
         self._channels[channel.id] = channel
