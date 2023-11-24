@@ -495,6 +495,7 @@ class HTTPClient:
         unsync_clock: bool = True,
         http_trace: Optional[aiohttp.TraceConfig] = None,
         max_ratelimit_timeout: Optional[float] = None,
+        iterate_local_addresses: bool = False
     ) -> None:
         self.loop: asyncio.AbstractEventLoop = loop
         self.local_addr=local_addr
@@ -512,6 +513,7 @@ class HTTPClient:
         self._global_over: asyncio.Event = MISSING
         self.token: Optional[str] = None
         self.proxy: Optional[str] = proxy
+        self.iterate_local_addresses = iterate_local_addresses
         self.invalid_ratelimiter = Cache()
         self.invalid_limit=9950
         self.anti_cloudflare_ban = anti_cloudflare_ban
@@ -522,7 +524,7 @@ class HTTPClient:
         self.use_clock: bool = not unsync_clock
         self.max_ratelimit_timeout: Optional[float] = max(30.0, max_ratelimit_timeout) if max_ratelimit_timeout else None
         self.invalids = 0
-        user_agent = 'DiscordBot (https://github.com/Rapptz/discord.py {0}) Python/{1[0]}.{1[1]} aiohttp/{2}'
+        user_agent = 'DiscordBot (https://github.com/cop-discord/disdick {0}) Python/{1[0]}.{1[1]} aiohttp/{2}'
         self.user_agent: str = user_agent.format(__version__, sys.version_info, aiohttp.__version__)
 
     def clear(self) -> None:
@@ -575,28 +577,31 @@ class HTTPClient:
         method = route.method
         url = route.url
         route_key = route.key
-
+        if self.iterate_local_addresses == True:
+            if not hasattr(self, 'address_pool'):
+                try:
+                    from netifaces import interfaces, ifaddresses, AF_INET
+                    import netifaces
+                    interface = netifaces.ifaddresses(interfaces()[1])
+                    self.address_pool = iter([(x["addr"], x["addr"].split(":")[1] if ":" in x["addr"] else 0) for p in interface.keys() for x in interface[p] if "broadcast" in x and x["broadcast"].count(":") <= 1])
+                    local_addr = next(self.address_pool)
+                except:
+                    self.address_pool = False
+            else:
+                local_addr = next(self.address_pool)
         bucket_hash = None
         try:
             bucket_hash = self._bucket_hashes[route_key]
         except KeyError:
-            if proxy != None or local_addr != None:
-                if proxy != None:
-                    ip_key = proxy
-                else:
-                    ip_key = local_addr[0]
+            if ip_key := proxy or local_addr[0]:
                 key = f'{route_key}:{route.major_parameters}:{ip_key}'
             else:
                 key = f'{route_key}:{route.major_parameters}'
         else:
-            if proxy != None or local_addr != None:
-                if proxy != None:
-                    ip_key = proxy
-                else:
-                    ip_key = local_addr[0]
+            if ip_key := proxy or local_addr[0]:
                 key = f'{route_key}:{route.major_parameters}:{ip_key}'
             else:
-                key = f'{bucket_hash}:{route.major_parameters}'
+                key = f'{route_key}:{route.major_parameters}'
 
         ratelimit = self.get_ratelimit(key)
         if self.anti_cloudflare_ban == True:
