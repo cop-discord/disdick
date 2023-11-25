@@ -112,6 +112,20 @@ async def json_or_text(response: aiohttp.ClientResponse) -> Union[Dict[str, Any]
     return text
 
 
+class iteration(object):
+    def __init__(self, data: typing.Any):
+        self.data = data
+        self.index = -1
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.index += 1
+        if self.index > len(self.data)-1: self.index = 0
+        return self.data[self.index]
+
+
 class MultipartParameters(NamedTuple):
     payload: Optional[Dict[str, Any]]
     multipart: Optional[List[Dict[str, Any]]]
@@ -587,7 +601,7 @@ class HTTPClient:
                     from netifaces import interfaces, ifaddresses, AF_INET
                     import netifaces
                     interface = netifaces.ifaddresses(interfaces()[1])
-                    self.address_pool = iter([(x["addr"], x["addr"].split(":")[1] if ":" in x["addr"] else 0) for p in interface.keys() for x in interface[p] if "broadcast" in x and x["broadcast"].count(":") <= 1])
+                    self.address_pool = iteration([(x["addr"], x["addr"].split(":")[1] if ":" in x["addr"] else 0) for p in interface.keys() for x in interface[p] if "broadcast" in x and x["broadcast"].count(":") <= 1])
                     local_addr = next(self.address_pool)
                 except:
                     self.address_pool = False
