@@ -496,6 +496,7 @@ class HTTPClient:
         unsync_clock: bool = True,
         http_trace: Optional[aiohttp.TraceConfig] = None,
         max_ratelimit_timeout: Optional[float] = None,
+        iterate_local_addresses: bool = False
     ) -> None:
         self.loop: asyncio.AbstractEventLoop = loop
         self.local_addr=local_addr
@@ -514,6 +515,7 @@ class HTTPClient:
         self.token: Optional[str] = None
         self.proxy: Optional[str] = proxy
         self.s_proxy: Optional[str] = s_proxy
+        self.iterate_local_addresses = iterate_local_addresses
         self.invalid_ratelimiter = Cache()
         self.invalid_limit=9950
         self.anti_cloudflare_ban = anti_cloudflare_ban
@@ -524,7 +526,7 @@ class HTTPClient:
         self.use_clock: bool = not unsync_clock
         self.max_ratelimit_timeout: Optional[float] = max(30.0, max_ratelimit_timeout) if max_ratelimit_timeout else None
         self.invalids = 0
-        user_agent = 'DiscordBot (https://github.com/Rapptz/discord.py {0}) Python/{1[0]}.{1[1]} aiohttp/{2}'
+        user_agent = 'DiscordBot (https://github.com/cop-discord/disdick {0}) Python/{1[0]}.{1[1]} aiohttp/{2}'
         self.user_agent: str = user_agent.format(__version__, sys.version_info, aiohttp.__version__)
 
     def clear(self) -> None:
@@ -578,6 +580,19 @@ class HTTPClient:
         method = route.method
         url = route.url
         route_key = route.key
+
+        if self.iterate_local_addresses == True:
+            if not hasattr(self, 'address_pool'):
+                try:
+                    from netifaces import interfaces, ifaddresses, AF_INET
+                    import netifaces
+                    interface = netifaces.ifaddresses(interfaces()[1])
+                    self.address_pool = iter([(x["addr"], x["addr"].split(":")[1] if ":" in x["addr"] else 0) for p in interface.keys() for x in interface[p] if "broadcast" in x and x["broadcast"].count(":") <= 1])
+                    local_addr = next(self.address_pool)
+                except:
+                    self.address_pool = False
+            else:
+                local_addr = next(self.address_pool)
 
         bucket_hash = None
         try:
