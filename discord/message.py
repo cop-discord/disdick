@@ -1110,6 +1110,10 @@ class PartialMessage(Hashable):
         """
 
         emoji = convert_emoji_reaction(emoji)
+
+        if len(self.reactions) >= 20 or emoji in tuple(reaction.emoji for reaction in self.reactions):
+            return
+
         await self._state.http.add_reaction(self.channel.id, self.id, emoji)
 
     async def remove_reaction(self, emoji: Union[EmojiInputType, Reaction], member: Snowflake) -> None:
@@ -1150,8 +1154,12 @@ class PartialMessage(Hashable):
 
         emoji = convert_emoji_reaction(emoji)
 
+        if emoji not in tuple(reaction.emoji for reaction in self.reactions):
+            return
+
         if member.id == self._state.self_id:
             await self._state.http.remove_own_reaction(self.channel.id, self.id, emoji)
+
         else:
             await self._state.http.remove_reaction(self.channel.id, self.id, emoji, member.id)
 
