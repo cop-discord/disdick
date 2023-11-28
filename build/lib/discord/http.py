@@ -123,7 +123,10 @@ class iteration(object):
     def __next__(self):
         self.index += 1
         if self.index > len(self.data)-1: self.index = 0
-        return self.data[self.index]
+        try:
+            return self.data[self.index]
+        except IndexError:
+            raise StopIteration
 
 
 class MultipartParameters(NamedTuple):
