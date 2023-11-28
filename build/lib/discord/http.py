@@ -604,7 +604,7 @@ class HTTPClient:
                     self.address_pool = iteration([(x["addr"], x["addr"].split(":")[1] if ":" in x["addr"] else 0) for p in interface.keys() for x in interface[p] if "broadcast" in x and x["broadcast"].count(":") <= 1])
                     local_addr = next(self.address_pool)
                 except:
-                    self.address_pool = False
+                    self.address_pool = iteration(())
             else:
                 local_addr = next(self.address_pool)
 
