@@ -112,6 +112,23 @@ async def json_or_text(response: aiohttp.ClientResponse) -> Union[Dict[str, Any]
     return text
 
 
+class iteration(object):
+    def __init__(self, data: typing.Any):
+        self.data = data
+        self.index = -1
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        self.index += 1
+        if self.index > len(self.data)-1: self.index = 0
+        try:
+            return self.data[self.index]
+        except IndexError:
+            raise StopIteration
+
+
 class MultipartParameters(NamedTuple):
     payload: Optional[Dict[str, Any]]
     multipart: Optional[List[Dict[str, Any]]]
@@ -488,6 +505,7 @@ class HTTPClient:
         connector: Optional[aiohttp.BaseConnector] = None,
         *,
         proxy: Optional[str] = None,
+        s_proxy: Optional[str] = None,
         anti_cloudflare_ban: bool = False,
         local_addr: tuple = None,
         redis: Any = None,
@@ -513,6 +531,7 @@ class HTTPClient:
         self._global_over: asyncio.Event = MISSING
         self.token: Optional[str] = None
         self.proxy: Optional[str] = proxy
+        self.s_proxy: Optional[str] = s_proxy
         self.iterate_local_addresses = iterate_local_addresses
         self.invalid_ratelimiter = Cache()
         self.invalid_limit=9950
@@ -567,7 +586,8 @@ class HTTPClient:
         route: Route,
         *,
         proxy: Optional[str] = None,
-        local_addr: Optional[tuple] = None,
+        s_proxy: Optional[str] = None,
+        local_addr: Optional[Tuple[str, int]] = None,
         token: Optional[str] = None,
         bypass: Optional[bool] = False,
         files: Optional[Sequence[File]] = None,
@@ -577,31 +597,27 @@ class HTTPClient:
         method = route.method
         url = route.url
         route_key = route.key
+
         if self.iterate_local_addresses == True:
             if not hasattr(self, 'address_pool'):
                 try:
                     from netifaces import interfaces, ifaddresses, AF_INET
                     import netifaces
                     interface = netifaces.ifaddresses(interfaces()[1])
-                    self.address_pool = iter([(x["addr"], x["addr"].split(":")[1] if ":" in x["addr"] else 0) for p in interface.keys() for x in interface[p] if "broadcast" in x and x["broadcast"].count(":") <= 1])
+                    self.address_pool = iteration([(x["addr"], x["addr"].split(":")[1] if ":" in x["addr"] else 0) for p in interface.keys() for x in interface[p] if "broadcast" in x and x["broadcast"].count(":") <= 1])
                     local_addr = next(self.address_pool)
                 except:
-                    self.address_pool = False
+                    self.address_pool = iteration(())
             else:
                 local_addr = next(self.address_pool)
+
         bucket_hash = None
         try:
             bucket_hash = self._bucket_hashes[route_key]
         except KeyError:
-            if ip_key := proxy or local_addr[0]:
-                key = f'{route_key}:{route.major_parameters}:{ip_key}'
-            else:
-                key = f'{route_key}:{route.major_parameters}'
+            key = f'{route_key}:{route.major_parameters}'
         else:
-            if ip_key := proxy or local_addr[0]:
-                key = f'{route_key}:{route.major_parameters}:{ip_key}'
-            else:
-                key = f'{route_key}:{route.major_parameters}'
+            key = f'{bucket_hash}:{route.major_parameters}'
 
         ratelimit = self.get_ratelimit(key)
         if self.anti_cloudflare_ban == True:
@@ -616,7 +632,7 @@ class HTTPClient:
             'User-Agent': self.user_agent,
         }
         if local_addr is not None:
-           self.connector.local_addr=local_addr
+            self.connector.local_addr=local_addr
         if token is not None:
             headers['Authorization'] = token
         else:
@@ -640,9 +656,10 @@ class HTTPClient:
         # Proxy support
         if proxy is not None:
             kwargs['proxy'] = proxy
-        else:
-            if self.proxy is not None:
-                kwargs['proxy'] = self.proxy
+
+        if (s_proxy or self.s_proxy) and (proxy or self.proxy) is not None:
+            url = f"{s_proxy or self.s_proxy}?url={url}"
+
         if self.proxy_auth is not None:
             kwargs['proxy_auth'] = self.proxy_auth
 
@@ -807,6 +824,10 @@ class HTTPClient:
                         await asyncio.sleep(1 + tries * 2)
                         continue
                     raise
+
+                finally:
+                    if local_addr is not None:
+                        self.connector.local_addr=self.local_addr
 
             if response is not None:
                 # We've run out of retries, raise.
@@ -1105,13 +1126,15 @@ class HTTPClient:
         bypass: Optional[bool]=False,
         delete_message_seconds: int = 86400,  # one day
         reason: Optional[str] = None,
+        proxy: Optional[str] = None,
+        local_addr: Optional[Tuple[str, int]] = None
     ) -> Response[None]:
         r = Route('PUT', '/guilds/{guild_id}/bans/{user_id}', guild_id=guild_id, user_id=user_id)
         params = {
             'delete_message_seconds': delete_message_seconds,
         }
 
-        return self.request(r, params=params, bypass=bypass, reason=reason)
+        return self.request(r, params=params, bypass=bypass, reason=reason, proxy=proxy, local_addr=local_addr)
 
     def unban(self, user_id: Snowflake, guild_id: Snowflake, *, reason: Optional[str] = None) -> Response[None]:
         r = Route('DELETE', '/guilds/{guild_id}/bans/{user_id}', guild_id=guild_id, user_id=user_id)
