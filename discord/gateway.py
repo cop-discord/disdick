@@ -601,7 +601,7 @@ class DiscordWebSocket:
             _log.debug('Unknown event %s.', event)
         else:
             if self.limit_payloads == True:
-                if await self.limiter.ratelimit(hash_(data),1,5) == True: raise DuplicatePayload(f"Duplicate Payload returned from the websocket with data : {data}")
+                if await self.limiter.ratelimit(hash_(repr(data)),1,5) == True: raise DuplicatePayload(f"Duplicate Payload returned from the websocket with data : {data}")
             func(data)
 
         # remove the dispatched listeners
