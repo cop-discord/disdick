@@ -43,6 +43,8 @@ from . import utils
 from .activity import BaseActivity
 from .enums import SpeakingState
 from .errors import ConnectionClosed
+from .expiringdictionary import ExpiringDictionary
+from xxhash import xxh3_64_hexdigest as hash_
 
 _log = logging.getLogger(__name__)
 
@@ -61,6 +63,12 @@ if TYPE_CHECKING:
     from .state import ConnectionState
     from .voice_client import VoiceClient
 
+
+class DuplicatePayload(Exception):
+    """Exception resulted by discord hiccuping and dispatching multiple of the same event payloads"""
+    def __init__(self, message, **kwargs):
+        super().__init__(message)
+        self.kwargs = kwargs
 
 class ReconnectWebSocket(Exception):
     """Signals to safely reconnect the websocket."""
@@ -308,10 +316,13 @@ class DiscordWebSocket:
     GUILD_SYNC         = 12
     # fmt: on
 
-    def __init__(self, socket: aiohttp.ClientWebSocketResponse, *, loop: asyncio.AbstractEventLoop) -> None:
+    def __init__(self, socket: aiohttp.ClientWebSocketResponse, *, loop: asyncio.AbstractEventLoop, use_mobile: bool = False, limit_payloads: bool = False) -> None:
         self.socket: aiohttp.ClientWebSocketResponse = socket
         self.loop: asyncio.AbstractEventLoop = loop
-
+        self.use_mobile = use_mobile
+        self.limit_payloads = limit_payloads
+        if self.limit_payloads == True:
+            self.limiter = ExpiringDictionary()
         # an empty dispatcher to prevent crashes
         self._dispatch: Callable[..., Any] = lambda *args: None
         # generic event listeners
@@ -354,6 +365,8 @@ class DiscordWebSocket:
         resume: bool = False,
         encoding: str = 'json',
         zlib: bool = True,
+        use_mobile: bool = False,
+        limit_payloads: bool = False,
     ) -> Self:
         """Creates a main websocket for Discord from a :class:`Client`.
 
@@ -370,7 +383,7 @@ class DiscordWebSocket:
             url = gateway.with_query(v=INTERNAL_API_VERSION, encoding=encoding)
 
         socket = await client.http.ws_connect(str(url))
-        ws = cls(socket, loop=client.loop)
+        ws = cls(socket, loop=client.loop, use_mobile = use_mobile, limit_payloads = limit_payloads)
 
         # dynamically add attributes needed
         ws.token = client.http.token
@@ -437,19 +450,36 @@ class DiscordWebSocket:
 
     async def identify(self) -> None:
         """Sends the IDENTIFY packet."""
-        payload = {
-            'op': self.IDENTIFY,
-            'd': {
-                'token': self.token,
-                'properties': {
-                    'os': sys.platform,
-                    'browser': 'discord.py',
-                    'device': 'discord.py',
+        if self.use_mobile == False:
+            payload = {
+                'op': self.IDENTIFY,
+                'd': {
+                    'token': self.token,
+                    'properties': {
+                        'os': sys.platform,
+                        'browser': 'discord.py',
+                        'device': 'discord.py',
+                    },
+                    'compress': True,
+                    'large_threshold': 250,
                 },
-                'compress': True,
-                'large_threshold': 250,
-            },
-        }
+            }
+        else:
+            payload = {
+                "op": self.IDENTIFY,
+                "d": {
+                    "token": self.token,
+                    "properties": {
+                        "$os": "Discord iOS",
+                        "$browser": "Discord iOS",
+                        "$device": "iOS",
+                        "$referrer": "",
+                        "$referring_domain": "",
+                    },
+                    "compress": True,
+                    "large_threshold": 250,
+                },
+            }
 
         if self.shard_id is not None and self.shard_count is not None:
             payload['d']['shard'] = [self.shard_id, self.shard_count]
@@ -570,6 +600,8 @@ class DiscordWebSocket:
         except KeyError:
             _log.debug('Unknown event %s.', event)
         else:
+            if self.limit_payloads == True:
+                if await self.limiter.ratelimit(hash_(data)) == True: raise DuplicatePayload(f"Duplicate Payload returned from the websocket with data : {data}")
             func(data)
 
         # remove the dispatched listeners

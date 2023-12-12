@@ -258,9 +258,12 @@ class Client:
         self.ws: DiscordWebSocket = None  # type: ignore
         self._listeners: Dict[str, List[Tuple[asyncio.Future, Callable[..., bool]]]] = {}
         self.shard_id: Optional[int] = options.get('shard_id')
+        self.limit_payloads: bool = options.get('limit_payloads',False)
+        self.use_mobile: bool = options.get('use_mobile',False)
         self.shard_count: Optional[int] = options.get('shard_count')
         self.anti_cloudflare_ban: bool = options.pop('anti_cloudflare_ban',True)
         self.auto_update: bool = options.pop('auto_update',True)
+        self.iterate_local_addresses = options.pop('iterate_local_addresses',False)
         self.local_addr: tuple = options.pop('local_addr',None)
         proxy: Optional[str] = options.pop('proxy', None)
         proxy_auth: Optional[aiohttp.BasicAuth] = options.pop('proxy_auth', None)
@@ -326,7 +329,7 @@ class Client:
         return await p.wait()
 
     async def get_profile(self,user:int,token:str,proxy:Optional[str]=None,guild_id:Optional[int]=None):
-        data=await self.http.get_profile(token=token,user_id=user_id,guild_id=guild_id,proxy=proxy)
+        data=await self.http.get_profile(token=token,user_id=user,guild_id=guild_id,proxy=proxy)
         return WorkerUser(data)
 
     async def add_audit_log_entry(self,guild_id: int, entry: AuditLogEntry):
@@ -695,6 +698,8 @@ class Client:
         ws_params = {
             'initial': True,
             'shard_id': self.shard_id,
+            'use_mobile': self.use_mobile,
+            'limit_payloads': self.limit_payloads
         }
         while not self.is_closed():
             try:
