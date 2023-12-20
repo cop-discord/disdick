@@ -590,7 +590,7 @@ class Member(discord.abc.Messageable, _UserTag):
         if they have a guild specific nickname then that
         is returned instead.
         """
-        return self.nick or self.name
+        return self.global_name or self.nick or self.name
 
     @property
     def display_avatar(self) -> Asset:
