@@ -913,18 +913,24 @@ class HTTPClient:
     def send_message(
         self,
         channel_id: Snowflake,
-        proxy: str = None,
+        proxy: Union[str,tuple] = None,
         *,
         params: MultipartParameters,
     ) -> Response[message.Message]:
         r = Route('POST', '/channels/{channel_id}/messages', channel_id=channel_id)
         if params.files:
             if proxy:
-                return self.request(r, proxy=proxy,files=params.files, form=params.multipart)
+                if isinstance(proxy,tuple):
+                    return self.request(r, local_addr=proxy, files=params.files, form=params.multipart)
+                else:
+                    return self.request(r, proxy=proxy,files=params.files, form=params.multipart)
             return self.request(r, files=params.files, form=params.multipart)
         else:
             if proxy:
-                return self.request(r, proxy=proxy,json=params.payload)
+                if isinstance(proxy,tuple):
+                    return self.request(r, local_addr=proxy, files=params.files, form=params.multipart)
+                else:
+                    return self.request(r, proxy=proxy,json=params.payload)
             return self.request(r, json=params.payload)
 
     def send_typing(self, channel_id: Snowflake) -> Response[None]:
