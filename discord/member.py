@@ -803,6 +803,7 @@ class Member(discord.abc.Messageable, _UserTag):
         voice_channel: Optional[VocalGuildChannel] = MISSING,
         timed_out_until: Optional[datetime.datetime] = MISSING,
         bypass_verification: bool = MISSING,
+        proxy: Optional[str] = None,
         reason: Optional[str] = None,
     ) -> Optional[Member]:
         """|coro|
@@ -948,7 +949,7 @@ class Member(discord.abc.Messageable, _UserTag):
             payload['flags'] = flags.value
 
         if payload:
-            data = await http.edit_member(guild_id, self.id, reason=reason, **payload)
+            data = await http.edit_member(guild_id, self.id, reason=reason, proxy=proxy, **payload)
             return Member(data=data, guild=self.guild, state=self._state)
 
     async def request_to_speak(self) -> None:
@@ -1049,7 +1050,7 @@ class Member(discord.abc.Messageable, _UserTag):
 
         await self.edit(timed_out_until=timed_out_until, reason=reason)
 
-    async def add_roles(self, *roles: Snowflake, reason: Optional[str] = None, atomic: bool = True) -> None:
+    async def add_roles(self, *roles: Snowflake, reason: Optional[str] = None, proxy: Optional[str] = None, atomic: bool = True) -> None:
         r"""|coro|
 
         Gives the member a number of :class:`Role`\s.
@@ -1080,15 +1081,15 @@ class Member(discord.abc.Messageable, _UserTag):
 
         if not atomic:
             new_roles = utils._unique(Object(id=r.id) for s in (self.roles[1:], roles) for r in s)
-            await self.edit(roles=new_roles, reason=reason)
+            await self.edit(roles=new_roles, reason=reason, proxy=proxy)
         else:
             req = self._state.http.add_role
             guild_id = self.guild.id
             user_id = self.id
             for role in roles:
-                await req(guild_id, user_id, role.id, reason=reason)
+                await req(guild_id, user_id, role.id, reason=reason, proxy=proxy)
 
-    async def remove_roles(self, *roles: Snowflake, reason: Optional[str] = None, atomic: bool = True) -> None:
+    async def remove_roles(self, *roles: Snowflake, reason: Optional[str] = None, proxy: Optional[str] = None, atomic: bool = True) -> None:
         r"""|coro|
 
         Removes :class:`Role`\s from this member.
@@ -1125,13 +1126,13 @@ class Member(discord.abc.Messageable, _UserTag):
                 except ValueError:
                     pass
 
-            await self.edit(roles=new_roles, reason=reason)
+            await self.edit(roles=new_roles, reason=reason, proxy=proxy)
         else:
             req = self._state.http.remove_role
             guild_id = self.guild.id
             user_id = self.id
             for role in roles:
-                await req(guild_id, user_id, role.id, reason=reason)
+                await req(guild_id, user_id, role.id, reason=reason, proxy=proxy)
 
     def get_role(self, role_id: int, /) -> Optional[Role]:
         """Returns a role with the given ID from roles which the member has.

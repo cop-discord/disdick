@@ -113,7 +113,7 @@ async def json_or_text(response: aiohttp.ClientResponse) -> Union[Dict[str, Any]
 
 
 class iteration(object):
-    def __init__(self, data: typing.Any):
+    def __init__(self, data: Any):
         self.data = data
         self.index = -1
 
@@ -1180,6 +1180,7 @@ class HTTPClient:
         guild_id: Snowflake,
         user_id: Snowflake,
         nickname: str,
+        proxy: Optional[str]=None,
         *,
         reason: Optional[str] = None,
     ) -> Response[member.Member]:
@@ -1187,6 +1188,8 @@ class HTTPClient:
         payload = {
             'nick': nickname,
         }
+        if proxy:
+            return self.request(r, json=payload, reason=reason, proxy=proxy)
         return self.request(r, json=payload, reason=reason)
 
     def edit_my_voice_state(self, guild_id: Snowflake, payload: Dict[str, Any]) -> Response[None]:
@@ -1201,11 +1204,14 @@ class HTTPClient:
         self,
         guild_id: Snowflake,
         user_id: Snowflake,
+        proxy: Optional[str] = None,
         *,
         reason: Optional[str] = None,
         **fields: Any,
     ) -> Response[member.MemberWithUser]:
         r = Route('PATCH', '/guilds/{guild_id}/members/{user_id}', guild_id=guild_id, user_id=user_id)
+        if proxy:
+            return self.request(r, json=fields, reason=reason, proxy=proxy)
         return self.request(r, json=fields, reason=reason)
 
     # Channel management
@@ -1945,7 +1951,7 @@ class HTTPClient:
         return self.request(r, json=positions, reason=reason)
 
     def add_role(
-        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, *, reason: Optional[str] = None
+        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, proxy: Optional[str] = None, *, reason: Optional[str] = None
     ) -> Response[None]:
         r = Route(
             'PUT',
@@ -1954,10 +1960,13 @@ class HTTPClient:
             user_id=user_id,
             role_id=role_id,
         )
-        return self.request(r, reason=reason)
+        if proxy:
+            return self.request(r, reason=reason, proxy=proxy)
+        else:
+            return self.request(r, reason=reason)
 
     def remove_role(
-        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, *, reason: Optional[str] = None
+        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, proxy: Optional[str] = None, *, reason: Optional[str] = None
     ) -> Response[None]:
         r = Route(
             'DELETE',
@@ -1966,7 +1975,11 @@ class HTTPClient:
             user_id=user_id,
             role_id=role_id,
         )
-        return self.request(r, reason=reason)
+        if proxy:
+            return self.request(r, reason=reason, proxy=proxy)
+        else:
+            return self.request(r, reason=reason)
+        
 
     def edit_channel_permissions(
         self,
