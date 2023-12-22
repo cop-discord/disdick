@@ -314,14 +314,34 @@ def deprecated(instead: Optional[str] = None) -> Callable[[Callable[P, T]], Call
 
     return actual_decorator
 
+class BadImage(Exception):
+    def __init__(self, message, **kwargs):
+        super().__init__(message)
+        self.kwargs = kwargs
+
 async def image_validator(url:str,proxy:str=None):
-    try:
-        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=0,family=socket.AF_INET)) as session:
-            async with session.get(url,proxy=proxy) as request:
-                if request.status != 200: return False
-                if len(await request.read()) == 0: return False
-                return True
-    except: return False
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(limit=0,family=socket.AF_INET)) as session:
+        async with session.request('HEAD',url,proxy=proxy) as request:
+            if size := int(request.headers.get('Content-Length',50000)):
+                if size > 50000000:
+                    raise BadImage(f"The image `{url}` is over the size limit")
+        async with session.get(url,proxy=proxy) as request:
+            if request.status != 200: return False
+            if len(await request.read()) == 0: return False
+            return True
+        
+def chunk_list(data: list, amount: int) -> list[list]:
+    # makes lists of a big list of values every x amount of values, this shit is ass but it works so idfc fuck it
+    if len(data) < amount:
+        _chunks = [data]
+    else:
+        chunks = zip(*[iter(data)]*amount)
+        _chunks = list(list(_) for _ in chunks)
+    from itertools import chain
+    l = list(chain.from_iterable(_chunks))
+    null_check = [d for d in data if d not in l]
+    if len(null_check) > 0: _chunks.append(null_check)
+    return _chunks
 
 
 def oauth_url(

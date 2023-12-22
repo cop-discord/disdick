@@ -113,7 +113,7 @@ async def json_or_text(response: aiohttp.ClientResponse) -> Union[Dict[str, Any]
 
 
 class iteration(object):
-    def __init__(self, data: typing.Any):
+    def __init__(self, data: Any):
         self.data = data
         self.index = -1
 
@@ -612,12 +612,18 @@ class HTTPClient:
                 local_addr = next(self.address_pool)
 
         bucket_hash = None
+        if local_addr != None:
+            ip_key = f":{local_addr}"
+        elif proxy != None:
+            ip_key = f":{proxy}"
+        else:
+            ip_key = ""
         try:
             bucket_hash = self._bucket_hashes[route_key]
         except KeyError:
-            key = f'{route_key}:{route.major_parameters}'
+            key = f'{route_key}:{route.major_parameters}{ip_key}'
         else:
-            key = f'{bucket_hash}:{route.major_parameters}'
+            key = f'{bucket_hash}:{route.major_parameters}{ip_key}'
 
         ratelimit = self.get_ratelimit(key)
         if self.anti_cloudflare_ban == True:
@@ -913,18 +919,24 @@ class HTTPClient:
     def send_message(
         self,
         channel_id: Snowflake,
-        proxy: str = None,
+        proxy: Union[str,tuple] = None,
         *,
         params: MultipartParameters,
     ) -> Response[message.Message]:
         r = Route('POST', '/channels/{channel_id}/messages', channel_id=channel_id)
         if params.files:
             if proxy:
-                return self.request(r, proxy=proxy,files=params.files, form=params.multipart)
+                if isinstance(proxy,tuple):
+                    return self.request(r, local_addr=proxy, files=params.files, form=params.multipart)
+                else:
+                    return self.request(r, proxy=proxy,files=params.files, form=params.multipart)
             return self.request(r, files=params.files, form=params.multipart)
         else:
             if proxy:
-                return self.request(r, proxy=proxy,json=params.payload)
+                if isinstance(proxy,tuple):
+                    return self.request(r, local_addr=proxy, files=params.files, form=params.multipart)
+                else:
+                    return self.request(r, proxy=proxy,json=params.payload)
             return self.request(r, json=params.payload)
 
     def send_typing(self, channel_id: Snowflake) -> Response[None]:
@@ -1180,6 +1192,7 @@ class HTTPClient:
         guild_id: Snowflake,
         user_id: Snowflake,
         nickname: str,
+        proxy: Optional[str]=None,
         *,
         reason: Optional[str] = None,
     ) -> Response[member.Member]:
@@ -1187,6 +1200,8 @@ class HTTPClient:
         payload = {
             'nick': nickname,
         }
+        if proxy:
+            return self.request(r, json=payload, reason=reason, proxy=proxy)
         return self.request(r, json=payload, reason=reason)
 
     def edit_my_voice_state(self, guild_id: Snowflake, payload: Dict[str, Any]) -> Response[None]:
@@ -1201,11 +1216,14 @@ class HTTPClient:
         self,
         guild_id: Snowflake,
         user_id: Snowflake,
+        proxy: Optional[str] = None,
         *,
         reason: Optional[str] = None,
         **fields: Any,
     ) -> Response[member.MemberWithUser]:
         r = Route('PATCH', '/guilds/{guild_id}/members/{user_id}', guild_id=guild_id, user_id=user_id)
+        if proxy:
+            return self.request(r, json=fields, reason=reason, proxy=proxy)
         return self.request(r, json=fields, reason=reason)
 
     # Channel management
@@ -1945,7 +1963,7 @@ class HTTPClient:
         return self.request(r, json=positions, reason=reason)
 
     def add_role(
-        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, *, reason: Optional[str] = None
+        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, proxy: Optional[str] = None, *, reason: Optional[str] = None
     ) -> Response[None]:
         r = Route(
             'PUT',
@@ -1954,10 +1972,13 @@ class HTTPClient:
             user_id=user_id,
             role_id=role_id,
         )
-        return self.request(r, reason=reason)
+        if proxy:
+            return self.request(r, reason=reason, proxy=proxy)
+        else:
+            return self.request(r, reason=reason)
 
     def remove_role(
-        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, *, reason: Optional[str] = None
+        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, proxy: Optional[str] = None, *, reason: Optional[str] = None
     ) -> Response[None]:
         r = Route(
             'DELETE',
@@ -1966,7 +1987,11 @@ class HTTPClient:
             user_id=user_id,
             role_id=role_id,
         )
-        return self.request(r, reason=reason)
+        if proxy:
+            return self.request(r, reason=reason, proxy=proxy)
+        else:
+            return self.request(r, reason=reason)
+        
 
     def edit_channel_permissions(
         self,
