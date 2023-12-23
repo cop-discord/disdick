@@ -931,7 +931,7 @@ class Member(discord.abc.Messageable, _UserTag):
             payload['channel_id'] = voice_channel and voice_channel.id
 
         if roles is not MISSING:
-            payload['roles'] = tuple(r.id for r in roles if r.is_assignable())
+            payload['roles'] = tuple(r.id for r in roles)
 
         if timed_out_until is not MISSING:
             if timed_out_until is None:
