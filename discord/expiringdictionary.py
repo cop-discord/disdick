@@ -49,7 +49,7 @@ class ExpiringDictionary:
             return 0
 
     async def sadd(self,key:str,*value:Any,position:int=0,expiration:int=0):
-        if key in futures: await self.do_cancel(key)
+        if key in self.futures: await self.do_cancel(key)
         if key in self.dict:
             if not isinstance(self.dict[key],list): raise InvalidOperation(f"Key {key} is already in the storage and the type isnt a list")
             if value in self.dict[key]: return 0
