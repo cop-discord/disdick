@@ -450,36 +450,20 @@ class DiscordWebSocket:
 
     async def identify(self) -> None:
         """Sends the IDENTIFY packet."""
-        if self.use_mobile == False:
-            payload = {
-                'op': self.IDENTIFY,
-                'd': {
-                    'token': self.token,
-                    'properties': {
-                        'os': sys.platform,
-                        'browser': 'discord.py',
-                        'device': 'discord.py',
-                    },
-                    'compress': True,
-                    'large_threshold': 250,
+        
+        payload = {
+            'op': self.IDENTIFY,
+            'd': {
+                'token': self.token,
+                'properties': {
+                    'os': sys.platform,
+                    'browser': self.use_mobile and 'Discord iOS' or 'discord.py',
+                    'device': self.use_mobile and 'Discord iOS' or 'discord.py',
                 },
-            }
-        else:
-            payload = {
-                "op": self.IDENTIFY,
-                "d": {
-                    "token": self.token,
-                    "properties": {
-                        "$os": "Discord iOS",
-                        "$browser": "Discord iOS",
-                        "$device": "iOS",
-                        "$referrer": "",
-                        "$referring_domain": "",
-                    },
-                    "compress": True,
-                    "large_threshold": 250,
-                },
-            }
+                'compress': True,
+                'large_threshold': 250,
+            },
+        }
 
         if self.shard_id is not None and self.shard_count is not None:
             payload['d']['shard'] = [self.shard_id, self.shard_count]
