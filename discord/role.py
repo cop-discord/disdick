@@ -315,14 +315,7 @@ class Role(Hashable):
     def is_dangerous(self) -> bool:
 
         permissions = Permissions(self._permissions)
-        return any([
-            permissions.kick_members, permissions.ban_members,
-            permissions.administrator, permissions.manage_channels,
-            permissions.manage_guild, permissions.manage_messages,
-            permissions.manage_roles, permissions.manage_webhooks,
-            permissions.manage_emojis_and_stickers, permissions.manage_threads,
-            permissions.mention_everyone, permissions.moderate_members
-        ])
+        return any((v for _, v in (permissions & Permissions.elevated())))
 
     def is_assignable(self) -> bool:
         """:class:`bool`: Whether the role is able to be assigned or removed by the bot.
