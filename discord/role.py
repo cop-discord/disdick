@@ -326,6 +326,10 @@ class Role(Hashable):
         return not self.is_default() and not self.managed and (me.top_role > self or me.id == self.guild.owner_id)
 
     @property
+    def dangerous(self) -> bool:
+        return self.is_dangerous()
+    
+    @property
     def permissions(self) -> Permissions:
         """:class:`Permissions`: Returns the role's permissions."""
         return Permissions(self._permissions)
