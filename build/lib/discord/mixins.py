@@ -29,7 +29,7 @@ __all__ = (
 
 
 class EqualityComparable:
-    __slots__ = ()
+    __slots__ = ("id",)
 
     id: int
 
@@ -40,7 +40,7 @@ class EqualityComparable:
 
 
 class Hashable(EqualityComparable):
-    __slots__ = ()
+    __slots__ = ("id",)
 
     def __hash__(self) -> int:
         return self.id >> 22
