@@ -333,6 +333,7 @@ class Guild(Hashable):
         self._scheduled_events: Dict[int, ScheduledEvent] = {}
         self._state: ConnectionState = state
         self._member_count: Optional[int] = None
+        self._from_data(data)
     
     def to_dict(self) -> Dict[str, Any]:
         ret: Dict[str, Any] = {}
