@@ -49,7 +49,7 @@ from typing import (
 from .object import OLDEST_OBJECT, Object
 from .context_managers import Typing
 from .enums import ChannelType
-from .errors import ClientException
+from .errors import ClientException, NotPermitted
 from .mentions import AllowedMentions
 from .permissions import PermissionOverwrite, Permissions
 from .role import Role
@@ -1514,6 +1514,10 @@ class Messageable:
         """
 
         channel = await self._get_channel()
+
+        if channel.permissions_for(channel.guild.me).send_messages is False:
+            raise NotPermitted(permission="send_messages")
+            
         state = self._state
         content = str(content) if content is not None else None
         previous_allowed_mention = state.allowed_mentions
