@@ -1515,7 +1515,7 @@ class Messageable:
 
         channel = await self._get_channel()
 
-        if channel.permissions_for(channel.guild.me).send_messages is False:
+        if (channel.type != ChannelType.private) and channel.permissions_for(channel.guild.me).send_messages is False:
             raise NotPermitted(permission="send_messages")
             
         state = self._state
