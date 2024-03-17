@@ -109,6 +109,7 @@ if TYPE_CHECKING:
         Guild as GuildPayload,
         RolePositionUpdate as RolePositionUpdatePayload,
         GuildFeature,
+        IncidentData
     )
     from .types.threads import (
         Thread as ThreadPayload,
@@ -509,7 +510,7 @@ class Guild(Hashable):
         self.approximate_member_count: Optional[int] = guild.get('approximate_member_count')
         self.premium_progress_bar_enabled: bool = guild.get('premium_progress_bar_enabled', False)
         self.owner_id: Optional[int] = utils._get_as_snowflake(guild, 'owner_id')
-
+        self._incidents_data: Optional[IncidentData] = guild.get('incidents_data')
         self._sync(guild)
         self._large: Optional[bool] = None if self._member_count is None else self._member_count >= 250
 
@@ -1872,6 +1873,8 @@ class Guild(Hashable):
         premium_progress_bar_enabled: bool = MISSING,
         discoverable: bool = MISSING,
         invites_disabled: bool = MISSING,
+        invites_disabled_until: datetime.datetime = MISSING,
+        dms_disabled_until: datetime.datetime = MISSING,
         widget_enabled: bool = MISSING,
         widget_channel: Optional[Snowflake] = MISSING,
         mfa_level: MFALevel = MISSING,
@@ -2136,7 +2139,29 @@ class Guild(Hashable):
 
         if premium_progress_bar_enabled is not MISSING:
             fields['premium_progress_bar_enabled'] = premium_progress_bar_enabled
+        incident_actions_payload: IncidentData = {}
+        if invites_disabled_until is not MISSING:
+            if invites_disabled_until is None:
+                incident_actions_payload['invites_disabled_until'] = None
+            else:
+                if invites_disabled_until.tzinfo is None:
+                    raise TypeError(
+                        'invites_disabled_until must be an aware datetime. Consider using discord.utils.utcnow() or datetime.datetime.now().astimezone() for local time.'
+                    )
+                incident_actions_payload['invites_disabled_until'] = invites_disabled_until.isoformat()
 
+        if dms_disabled_until is not MISSING:
+            if dms_disabled_until is None:
+                incident_actions_payload['dms_disabled_until'] = None
+            else:
+                if dms_disabled_until.tzinfo is None:
+                    raise TypeError(
+                        'dms_disabled_until must be an aware datetime. Consider using discord.utils.utcnow() or datetime.datetime.now().astimezone() for local time.'
+                    )
+                incident_actions_payload['dms_disabled_until'] = dms_disabled_until.isoformat()
+
+        if incident_actions_payload:
+            await http.edit_incident_actions(self.id, payload=incident_actions_payload)
         widget_payload: EditWidgetSettings = {}
         if widget_channel is not MISSING:
             widget_payload['channel_id'] = None if widget_channel is None else widget_channel.id
@@ -4249,6 +4274,46 @@ class Guild(Hashable):
         data = await self._state.http.get_auto_moderation_rules(self.id)
 
         return [AutoModRule(data=d, guild=self, state=self._state) for d in data]
+
+    @property
+    def invites_paused_until(self) -> Optional[datetime.datetime]:
+        """Optional[:class:`datetime.datetime`]: If invites are paused, returns when
+        invites will get enabled in UTC, otherwise returns None.
+        .. versionadded:: 2.4
+        """
+        if not self._incidents_data:
+            return None
+
+        return utils.parse_time(self._incidents_data.get('invites_disabled_until'))
+
+    @property
+    def dms_paused_until(self) -> Optional[datetime.datetime]:
+        """Optional[:class:`datetime.datetime`]: If DMs are paused, returns when DMs
+        will get enabled in UTC, otherwise returns None.
+        .. versionadded:: 2.4
+        """
+        if not self._incidents_data:
+            return None
+
+        return utils.parse_time(self._incidents_data.get('dms_disabled_until'))
+
+    def invites_paused(self) -> bool:
+        """:class:`bool`: Whether invites are paused in the guild.
+        .. versionadded:: 2.4
+        """
+        if not self.invites_paused_until:
+            return False
+
+        return self.invites_paused_until > utils.utcnow()
+
+    def dms_paused(self) -> bool:
+        """:class:`bool`: Whether DMs are paused in the guild.
+        .. versionadded:: 2.4
+        """
+        if not self.dms_paused_until:
+            return False
+
+        return self.dms_paused_until > utils.utcnow()
 
     async def create_automod_rule(
         self,
