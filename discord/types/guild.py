@@ -178,6 +178,11 @@ class _RolePositionRequired(TypedDict):
 
 class RolePositionUpdate(_RolePositionRequired, total=False):
     position: Optional[Snowflake]
+
+class IncidentData(TypedDict):
+    invites_disabled_until: NotRequired[Optional[str]]
+    dms_disabled_until: NotRequired[Optional[str]]
+
     
 class BulkBanUserResponse(TypedDict):
     banned_users: Optional[List[Snowflake]]
