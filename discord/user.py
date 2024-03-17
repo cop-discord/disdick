@@ -369,7 +369,7 @@ class ClientUser(BaseUser):
         self._flags = data.get('flags', 0)
         self.mfa_enabled = data.get('mfa_enabled', False)
 
-    async def edit(self, *, username: str = MISSING, avatar: Optional[bytes] = MISSING) -> ClientUser:
+    async def edit(self, *, username: str = MISSING, avatar: Optional[bytes] = MISSING, banner: Optional[bytes] = MISSING) -> ClientUser:
         """|coro|
 
         Edits the current profile of the client.
@@ -419,6 +419,11 @@ class ClientUser(BaseUser):
                 payload['avatar'] = _bytes_to_base64_data(avatar)
             else:
                 payload['avatar'] = None
+        if banner is not MISSING:
+            if banner is not None:
+                payload['banner'] = _bytes_to_base64_data(banner)
+            else:
+                payload['banner'] = None
 
         data: UserPayload = await self._state.http.edit_profile(payload)
         return ClientUser(state=self._state, data=data)
