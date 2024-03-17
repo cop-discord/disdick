@@ -892,6 +892,9 @@ class HTTPClient:
 
         return data
 
+    def edit_incident_actions(self, guild_id: Snowflake, payload: guild.IncidentData) -> Response[guild.IncidentData]:
+        return self.request(Route('PUT', '/guilds/{guild_id}/incident-actions', guild_id=guild_id), json=payload)
+
     def logout(self) -> Response[None]:
         return self.request(Route('POST', '/auth/logout'))
 
