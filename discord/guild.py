@@ -35,6 +35,7 @@ from typing import (
     Coroutine,
     Dict,
     List,
+    Iterable,
     Mapping,
     NamedTuple,
     Sequence,
@@ -141,6 +142,10 @@ if TYPE_CHECKING:
 class BanEntry(NamedTuple):
     reason: Optional[str]
     user: User
+
+class BulkBanResult(NamedTuple):
+    banned: List[Object]
+    failed: List[Object]
 
 
 class _GuildLimit(NamedTuple):
@@ -1105,6 +1110,51 @@ class Guild(Hashable):
             return m.nick == name or m.global_name == name or m.name == name
 
         return utils.find(pred, members)
+
+    async def bulk_ban(
+        self,
+        users: Iterable[Snowflake],
+        *,
+        reason: Optional[str] = None,
+        delete_message_seconds: int = 86400,
+    ) -> BulkBanResult:
+        """|coro|
+        Bans multiple users from the guild.
+        The users must meet the :class:`abc.Snowflake` abc.
+        You must have :attr:`~Permissions.ban_members` to do this.
+        .. versionadded:: 2.4
+        Parameters
+        -----------
+        users: :class:`abc.Snowflake`
+            The user to ban from their guild.
+        delete_message_seconds: :class:`int`
+            The number of seconds worth of messages to delete from the user
+            in the guild. The minimum is 0 and the maximum is 604800 (7 days).
+            Defaults to 1 day.
+        reason: Optional[:class:`str`]
+            The reason the users got banned.
+        Raises
+        -------
+        Forbidden
+            You do not have the proper permissions to ban.
+        HTTPException
+            Banning failed.
+        Returns
+        --------
+        :class:`BulkBanResult`
+            The result of the bulk ban operation.
+        """
+
+        response = await self._state.http.bulk_ban(
+            self.id,
+            user_ids=[u.id for u in users],
+            delete_message_seconds=delete_message_seconds,
+            reason=reason,
+        )
+        return BulkBanResult(
+            banned=[Object(id=int(user_id), type=User) for user_id in response.get('banned_users', []) or []],
+            failed=[Object(id=int(user_id), type=User) for user_id in response.get('failed_users', []) or []],
+        )
 
     @overload
     def _create_channel(
