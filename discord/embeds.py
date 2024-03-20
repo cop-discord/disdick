@@ -553,6 +553,36 @@ class Embed:
 
         return self
 
+    def set_description(self, description: Any) -> Self:
+        """Sets the description for the embed content"""
+        
+        self.description = description
+        return self
+
+    def set_title(self, title: Any) -> Self:
+        """Sets the title for the embed content"""
+        
+        self.title = title
+        return self
+
+    def set_timestamp(self, timestamp: Any) -> Self:
+        """Sets the timestamp for the embed content"""
+        
+        self.timestamp = timestamp
+        return self
+
+    def set_url(self, url: Any) -> Self:
+        """Sets the url for the embed content"""
+        
+        self.url = url
+        return self
+
+    def set_color(self, color: Any) -> Self:
+        """Sets the color for the embed content"""
+        
+        self.color = color
+        return self
+
     @property
     def fields(self) -> List[_EmbedFieldProxy]:
         """List[``EmbedProxy``]: Returns a :class:`list` of ``EmbedProxy`` denoting the field contents.
