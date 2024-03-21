@@ -594,6 +594,36 @@ class Embed:
         # Lying to the type checker for better developer UX.
         return [EmbedProxy(d) for d in getattr(self, '_fields', [])]  # type: ignore
 
+    def add_fields(self, *fields: Dict[str, Union[str, bool]]) -> Self:    # Accepts both a list of dictionaries, and dictionaries as positional arguments
+        """Adds multiple fields to the embed object.
+
+        This function returns the class instance to allow for fluent-style
+        chaining.
+
+        Parameters
+        ----------
+        *fields: Dict[str, Union[str, bool]]
+            Variable number of dictionaries representing fields to be added. Each
+            dictionary should contain the following keys:
+                - 'title': The title of the field.
+                - 'value': The value of the field.
+                - 'inline': Whether the field should be displayed inline (optional).
+                    Defaults to True if not specified.
+        """
+        
+        self._fields = getattr(self, '_fields', [])
+
+        if len(fields) == 1 and isinstance(fields[0], list):
+            fields = fields[0]
+
+        self._fields.extend([{
+            'name': field.get("title", ""),
+            'value': field.get("value", ""),
+            'inline': field.get("inline", True)
+        } for field in fields])
+
+        return self
+
     def add_field(self, *, name: Any, value: Any, inline: bool = True) -> Self:
         """Adds a field to the embed object.
 
