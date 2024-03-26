@@ -1,5 +1,5 @@
-aiohttp>=3.7.4.post0
-aiodns
+rust_requests
+fast_string_match
 humanfriendly
 orjson
 psutil
