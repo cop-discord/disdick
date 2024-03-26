@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import logging,socket
+import logging, socket
 import sys
 from typing import (
     Any,
@@ -49,7 +49,7 @@ from urllib.parse import quote as _uriquote
 from collections import deque
 import datetime,orjson
 from .expiringdictionary import ExpiringDictionary as Cache
-import aiohttp
+from rust_requests import Client as Session, Request
 
 from .errors import HTTPException, RateLimited, Forbidden, NotFound, LoginFailure, DiscordServerError, GatewayNotFound, InvalidRatelimit
 from .gateway import DiscordClientWebSocketResponse
