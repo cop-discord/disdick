@@ -502,7 +502,6 @@ class HTTPClient:
     def __init__(
         self,
         loop: asyncio.AbstractEventLoop,
-        connector: Optional[aiohttp.BaseConnector] = None,
         *,
         proxy: Optional[str] = None,
         s_proxy: Optional[str] = None,
@@ -517,8 +516,7 @@ class HTTPClient:
     ) -> None:
         self.loop: asyncio.AbstractEventLoop = loop
         self.local_addr=local_addr
-        self.connector: aiohttp.TCPConnector(family=socket.AF_INET,limit=0,local_addr=self.local_addr) = connector or MISSING
-        self.__session: aiohttp.ClientSession(connector=self.connector,resolver=aiohttp.AsyncResolver()) = MISSING  # filled in static_login
+        self.__session = MISSING  # filled in static_login
         # Route key -> Bucket hash
         self._bucket_hashes: Dict[str, str] = {}
         # Bucket Hash + Major Parameters -> Rate limit
@@ -628,8 +626,8 @@ class HTTPClient:
         ratelimit = self.get_ratelimit(key)
         if self.anti_cloudflare_ban == True:
             if self.redis != None:
-                d=await self.redis.ratelimited('invalidss',9950,6000,0)
-                if d == True and bypass == False: raise InvalidRatelimit(retry_after=int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
+                rl_check = await self.redis.ratelimited('invalidss',9950,6000,0)
+                if rl_check == True and bypass == False: raise InvalidRatelimit(retry_after=int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
             else:
                 if bypass == False and self.invalid_ratelimiter.is_ratelimited("invalids") == True:
                     raise InvalidRatelimit(self.invalid_ratelimiter.time_remaining("invalids"))
@@ -638,7 +636,7 @@ class HTTPClient:
             'User-Agent': self.user_agent,
         }
         if local_addr is not None:
-            self.connector.local_addr=local_addr
+            kwargs["proxy"] = f"http://{local_addr}"
         if token is not None:
             headers['Authorization'] = token
         else:
@@ -647,7 +645,7 @@ class HTTPClient:
         # some checking if it's a JSON request
         if 'json' in kwargs:
             headers['Content-Type'] = 'application/json'
-            kwargs['data'] = utils._to_json(kwargs.pop('json'))
+            kwargs['json'] = utils._to_json(kwargs.pop('json'))
 
         try:
             reason = kwargs.pop('reason')
@@ -673,7 +671,8 @@ class HTTPClient:
             # wait until the global lock is complete
             await self._global_over.wait()
 
-        response: Optional[aiohttp.ClientResponse] = None
+        response: Optional[Response] = None
+        # STOPPED HERE Next is do multipart migration
         data: Optional[Union[Dict[str, Any], str]] = None
         async with ratelimit:
             for tries in range(5):
@@ -689,7 +688,8 @@ class HTTPClient:
                     kwargs['data'] = form_data
 
                 try:
-                    async with self.__session.request(method, url, **kwargs) as response:
+                    request = await self.__session.send(Request(method, url, **kwargs))
+                    response = await request.response()
                         _log.debug('%s %s with %s has returned %s', method, url, kwargs.get('data'), response.status)
 
                         # even errors have text involved in them so this is safe to call
