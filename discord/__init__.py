@@ -17,6 +17,7 @@ __copyright__ = 'Copyright 2015-present Rapptz'
 __version__ = '2.4.0'
 
 __path__ = __import__('pkgutil').extend_path(__path__, __name__)
+__slots__ = ('you','are','a','faggot')
 
 import logging
 from typing import NamedTuple, Literal
