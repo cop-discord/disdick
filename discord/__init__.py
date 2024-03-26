@@ -8,7 +8,7 @@ An advanced wrapper for the Discord API.
 :license: MIT, see LICENSE for more details.
 
 """
-# FUCK GITHUB WORKFLOWS
+# FUCK GITHUB WORKFLOWS X2
 
 __title__ = 'disdick'
 __author__ = 'cop-discord/Rapptz'
