@@ -2,7 +2,7 @@
 Discord API Wrapper
 ~~~~~~~~~~~~~~~~~~~
 
-A basic wrapper for the Discord API.
+An advanced wrapper for the Discord API.
 
 :copyright: (c) 2015-present Rapptz
 :license: MIT, see LICENSE for more details.
