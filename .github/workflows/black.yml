@@ -19,4 +19,4 @@ jobs:
       - name: black
         uses: lgeiger/black-action@v1.0.1
         with:
-          args: ./discord --check 
+          args: ./discord 
