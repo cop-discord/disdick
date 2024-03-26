@@ -279,7 +279,7 @@ def handle_message_parameters(
                 }
             )
 
-    return MultipartParameters(payload=payload, multipart=multipart, files=files)
+    return MultipartParameters(form=payload, multipart=multipart, files=files)
 
 
 INTERNAL_API_VERSION: int = 10
