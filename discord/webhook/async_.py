@@ -1634,6 +1634,7 @@ class Webhook(BaseWebhook):
         thread_name: str = MISSING,
         wait: bool = False,
         suppress_embeds: bool = False,
+        applied_tags: List[ForumTag] = MISSING,
         silent: bool = False,
     ) -> Optional[WebhookMessage]:
         """|coro|
