@@ -322,6 +322,7 @@ class Guild(Hashable):
         'approximate_presence_count',
         'premium_progress_bar_enabled',
         'max_stage_video_users',
+        '_safety_alerts_channel_id',
     )
 
     _PREMIUM_GUILD_LIMITS: ClassVar[Dict[Optional[int], _GuildLimit]] = {
@@ -495,6 +496,7 @@ class Guild(Hashable):
             if state.cache_guild_expressions
             else ()
         )
+        
         self.features: List[GuildFeature] = guild.get('features', [])
         self._splash: Optional[str] = guild.get('splash')
         self._system_channel_id: Optional[int] = utils._get_as_snowflake(guild, 'system_channel_id')
