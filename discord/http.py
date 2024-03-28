@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import logging, socket
+import logging,socket
 import sys
 from typing import (
     Any,
@@ -49,7 +49,7 @@ from urllib.parse import quote as _uriquote
 from collections import deque
 import datetime,orjson
 from .expiringdictionary import ExpiringDictionary as Cache
-from rust_requests import Client as Session, Request
+import aiohttp
 
 from .errors import HTTPException, RateLimited, Forbidden, NotFound, LoginFailure, DiscordServerError, GatewayNotFound, InvalidRatelimit
 from .gateway import DiscordClientWebSocketResponse
@@ -169,6 +169,7 @@ def handle_message_parameters(
     mention_author: Optional[bool] = None,
     thread_name: str = MISSING,
     channel_payload: Dict[str, Any] = MISSING,
+    applied_tags: Optional[SnowflakeList] = MISSING,
 ) -> MultipartParameters:
     if files is not MISSING and file is not MISSING:
         raise TypeError('Cannot mix file and files keyword arguments.')
@@ -247,6 +248,7 @@ def handle_message_parameters(
     else:
         files = [a for a in attachments if isinstance(a, File)]
 
+
     if attachments is not MISSING:
         file_index = 0
         attachments_payload = []
@@ -258,6 +260,12 @@ def handle_message_parameters(
                 attachments_payload.append(attachment.to_dict())
 
         payload['attachments'] = attachments_payload
+        
+    if applied_tags is not MISSING:
+        if applied_tags is not None:
+            payload['applied_tags'] = applied_tags
+        else:
+            payload['applied_tags'] = []
 
     if channel_payload is not MISSING:
         payload = {
@@ -279,7 +287,7 @@ def handle_message_parameters(
                 }
             )
 
-    return MultipartParameters(form=payload, multipart=multipart, files=files)
+    return MultipartParameters(payload=payload, multipart=multipart, files=files)
 
 
 INTERNAL_API_VERSION: int = 10
@@ -502,6 +510,7 @@ class HTTPClient:
     def __init__(
         self,
         loop: asyncio.AbstractEventLoop,
+        connector: Optional[aiohttp.BaseConnector] = None,
         *,
         proxy: Optional[str] = None,
         s_proxy: Optional[str] = None,
@@ -516,7 +525,8 @@ class HTTPClient:
     ) -> None:
         self.loop: asyncio.AbstractEventLoop = loop
         self.local_addr=local_addr
-        self.__session = MISSING  # filled in static_login
+        self.connector: aiohttp.TCPConnector(family=socket.AF_INET,limit=0,local_addr=self.local_addr) = connector or MISSING
+        self.__session: aiohttp.ClientSession(connector=self.connector,resolver=aiohttp.AsyncResolver()) = MISSING  # filled in static_login
         # Route key -> Bucket hash
         self._bucket_hashes: Dict[str, str] = {}
         # Bucket Hash + Major Parameters -> Rate limit
@@ -626,8 +636,8 @@ class HTTPClient:
         ratelimit = self.get_ratelimit(key)
         if self.anti_cloudflare_ban == True:
             if self.redis != None:
-                rl_check = await self.redis.ratelimited('invalidss',9950,6000,0)
-                if rl_check == True and bypass == False: raise InvalidRatelimit(retry_after=int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
+                d=await self.redis.ratelimited('invalidss',9950,6000,0)
+                if d == True and bypass == False: raise InvalidRatelimit(retry_after=int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
             else:
                 if bypass == False and self.invalid_ratelimiter.is_ratelimited("invalids") == True:
                     raise InvalidRatelimit(self.invalid_ratelimiter.time_remaining("invalids"))
@@ -636,7 +646,7 @@ class HTTPClient:
             'User-Agent': self.user_agent,
         }
         if local_addr is not None:
-            kwargs["proxy"] = f"http://{local_addr}"
+            self.connector.local_addr=local_addr
         if token is not None:
             headers['Authorization'] = token
         else:
@@ -645,7 +655,7 @@ class HTTPClient:
         # some checking if it's a JSON request
         if 'json' in kwargs:
             headers['Content-Type'] = 'application/json'
-            kwargs['json'] = utils._to_json(kwargs.pop('json'))
+            kwargs['data'] = utils._to_json(kwargs.pop('json'))
 
         try:
             reason = kwargs.pop('reason')
@@ -671,8 +681,7 @@ class HTTPClient:
             # wait until the global lock is complete
             await self._global_over.wait()
 
-        response: Optional[Response] = None
-        # STOPPED HERE Next is do multipart migration
+        response: Optional[aiohttp.ClientResponse] = None
         data: Optional[Union[Dict[str, Any], str]] = None
         async with ratelimit:
             for tries in range(5):
@@ -688,8 +697,7 @@ class HTTPClient:
                     kwargs['data'] = form_data
 
                 try:
-                    request = await self.__session.send(Request(method, url, **kwargs))
-                    response = await request.response()
+                    async with self.__session.request(method, url, **kwargs) as response:
                         _log.debug('%s %s with %s has returned %s', method, url, kwargs.get('data'), response.status)
 
                         # even errors have text involved in them so this is safe to call
@@ -1168,6 +1176,13 @@ class HTTPClient:
             'delete_message_seconds': delete_message_seconds,
         }
         return self.request(r, json=payload, reason=reason)
+    
+    def edit_voice_channel_status(
+        self, status: Optional[str], *, channel_id: int, reason: Optional[str] = None
+    ) -> Response[None]:
+        r = Route('PUT', '/channels/{channel_id}/voice-status', channel_id=channel_id)
+        payload = {'status': status}
+        return self.request(r, reason=reason, json=payload)
 
     def guild_voice_state(
         self,
