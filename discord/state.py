@@ -262,6 +262,10 @@ class ConnectionState(Generic[ClientT]):
 
         self.clear()
 
+    @property
+    def cache_guild_expressions(self) -> bool:
+        return self._intents.emojis_and_stickers
+
     async def close(self) -> None:
         for voice in self.voice_clients:
             try:
