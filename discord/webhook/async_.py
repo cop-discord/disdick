@@ -45,7 +45,7 @@ from ..asset import Asset
 from ..partial_emoji import PartialEmoji
 from ..http import Route, handle_message_parameters, MultipartParameters, HTTPClient, json_or_text
 from ..mixins import Hashable
-from ..channel import TextChannel, ForumChannel, PartialMessageable
+from ..channel import TextChannel, ForumChannel, PartialMessageable, ForumTag
 from ..file import File
 
 __all__ = (
@@ -88,6 +88,7 @@ if TYPE_CHECKING:
         PartialChannel as PartialChannelPayload,
     )
     from ..types.emoji import PartialEmoji as PartialEmojiPayload
+    from ..types.snowflake import SnowflakeList 
 
     BE = TypeVar('BE', bound=BaseException)
     _State = Union[ConnectionState, '_WebhookState']
@@ -1777,6 +1778,11 @@ class Webhook(BaseWebhook):
         if thread_name is not MISSING and thread is not MISSING:
             raise TypeError('Cannot mix thread_name and thread keyword arguments.')
 
+        if applied_tags is MISSING:
+            applied_tag_ids = MISSING
+        else:
+            applied_tag_ids: SnowflakeList = [tag.id for tag in applied_tags]
+
         with handle_message_parameters(
             content=content,
             username=username,
@@ -1791,6 +1797,7 @@ class Webhook(BaseWebhook):
             thread_name=thread_name,
             allowed_mentions=allowed_mentions,
             previous_allowed_mentions=previous_mentions,
+            applied_tags=applied_tag_ids,
         ) as params:
             adapter = async_context.get()
             thread_id: Optional[int] = None
