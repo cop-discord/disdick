@@ -160,6 +160,9 @@ class Activity(BaseActivity):
         The type of activity currently being done.
     state: Optional[:class:`str`]
         The user's current state. For example, "In Game".
+    platform: Optional[:class:`str`]
+        The user's current platform.
+        .. versionadded:: 2.4
     details: Optional[:class:`str`]
         The detail of the user's current activity.
     timestamps: :class:`dict`
@@ -197,6 +200,7 @@ class Activity(BaseActivity):
         'state',
         'details',
         'timestamps',
+        'platform',
         'assets',
         'party',
         'flags',
@@ -215,6 +219,7 @@ class Activity(BaseActivity):
         self.state: Optional[str] = kwargs.pop('state', None)
         self.details: Optional[str] = kwargs.pop('details', None)
         self.timestamps: ActivityTimestamps = kwargs.pop('timestamps', {})
+        self.platform: Optional[str] = kwargs.pop('platform', None)
         self.assets: ActivityAssets = kwargs.pop('assets', {})
         self.party: ActivityParty = kwargs.pop('party', {})
         self.application_id: Optional[int] = _get_as_snowflake(kwargs, 'application_id')
@@ -238,6 +243,7 @@ class Activity(BaseActivity):
             ('type', self.type),
             ('name', self.name),
             ('url', self.url),
+            ('platform', self.platform),
             ('details', self.details),
             ('application_id', self.application_id),
             ('session_id', self.session_id),
@@ -353,11 +359,13 @@ class Game(BaseActivity):
         The game's name.
     """
 
-    __slots__ = ('name', '_end', '_start')
+    __slots__ = ('name', '_end', '_start', 'platform', 'assets')
 
     def __init__(self, name: str, **extra: Any) -> None:
         super().__init__(**extra)
         self.name: str = name
+        self.platform: Optional[str] = extra.get('platform')
+        self.assets: ActivityAssets = extra.get('assets', {}) or {}
 
         try:
             timestamps: ActivityTimestamps = extra['timestamps']
@@ -408,6 +416,8 @@ class Game(BaseActivity):
             'type': ActivityType.playing.value,
             'name': str(self.name),
             'timestamps': timestamps,
+            'platform': str(self.platform) if self.platform else None,
+            'assets': self.assets,
         }
 
     def __eq__(self, other: object) -> bool:
