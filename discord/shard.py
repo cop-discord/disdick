@@ -338,6 +338,7 @@ class AutoShardedClient(Client):
     def __init__(self, *args: Any, intents: Intents, **kwargs: Any) -> None:
         kwargs.pop('shard_id', None)
         self.shard_ids: Optional[List[int]] = kwargs.pop('shard_ids', None)
+        self.shard_connect_timeout: Optional[float] = kwargs.pop('shard_connect_timeout', 180.0)
         super().__init__(*args, intents=intents, **kwargs)
 
         if self.shard_ids is not None:
@@ -415,7 +416,7 @@ class AutoShardedClient(Client):
     async def launch_shard(self, gateway: yarl.URL, shard_id: int, *, initial: bool = False) -> None:
         try:
             coro = DiscordWebSocket.from_client(self, initial=initial, gateway=gateway, shard_id=shard_id)
-            ws = await asyncio.wait_for(coro, timeout=180.0)
+            ws = await asyncio.wait_for(coro, timeout=self.shard_connect_timeout)
         except Exception:
             _log.exception('Failed to connect for shard_id: %s. Retrying...', shard_id)
             await asyncio.sleep(5.0)

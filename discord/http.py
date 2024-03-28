@@ -1168,6 +1168,13 @@ class HTTPClient:
             'delete_message_seconds': delete_message_seconds,
         }
         return self.request(r, json=payload, reason=reason)
+    
+    def edit_voice_channel_status(
+        self, status: Optional[str], *, channel_id: int, reason: Optional[str] = None
+    ) -> Response[None]:
+        r = Route('PUT', '/channels/{channel_id}/voice-status', channel_id=channel_id)
+        payload = {'status': status}
+        return self.request(r, reason=reason, json=payload)
 
     def guild_voice_state(
         self,
