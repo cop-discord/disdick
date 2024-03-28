@@ -317,6 +317,7 @@ class Guild(Hashable):
         '_stage_instances',
         '_scheduled_events',
         '_threads',
+        '_afk_channel_id',
         '_incidents_data',
         'approximate_member_count',
         'approximate_presence_count',
