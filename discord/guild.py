@@ -321,6 +321,7 @@ class Guild(Hashable):
         'approximate_member_count',
         'approximate_presence_count',
         'premium_progress_bar_enabled',
+        'max_stage_video_users',
     )
 
     _PREMIUM_GUILD_LIMITS: ClassVar[Dict[Optional[int], _GuildLimit]] = {
