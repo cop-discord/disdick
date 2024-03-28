@@ -646,7 +646,19 @@ def find_emojis(text: str) -> List[str, ...]:
     """
     return regex.custom_emoji.findall(text) + regex.unicode_emoji.findall(text)
     
-    
+def _human_join(seq: Sequence[str], /, *, delimiter: str = ', ', final: str = 'or') -> str:
+    size = len(seq)
+    if size == 0:
+        return ''
+
+    if size == 1:
+        return seq[0]
+
+    if size == 2:
+        return f'{seq[0]} {final} {seq[1]}'
+
+    return delimiter.join(seq[:-1]) + f' {final} {seq[-1]}'
+
 def find_invites(text: str) -> List[str, ...]:
     """
     This function is used to find every invite link present in a given text.

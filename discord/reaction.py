@@ -23,232 +23,483 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from __future__ import annotations
-from typing import TYPE_CHECKING, AsyncIterator, Union, Optional
 
-from .user import User
-from .object import Object
+import datetime
+from typing import TYPE_CHECKING, Literal, Optional, Set, List, Tuple, Union
 
-# fmt: off
-__all__ = (
-    'Reaction',
-)
-# fmt: on
+from .enums import ChannelType, try_enum
+from .utils import _get_as_snowflake
+from .app_commands import AppCommandPermissions
+from .colour import Colour
 
 if TYPE_CHECKING:
-    from .member import Member
-    from .types.message import Reaction as ReactionPayload
+    from .types.gateway import (
+        MessageDeleteEvent,
+        MessageDeleteBulkEvent as BulkMessageDeleteEvent,
+        MessageReactionAddEvent,
+        MessageReactionRemoveEvent,
+        MessageReactionRemoveAllEvent as ReactionClearEvent,
+        MessageReactionRemoveEmojiEvent as ReactionClearEmojiEvent,
+        MessageUpdateEvent,
+        IntegrationDeleteEvent,
+        ThreadUpdateEvent,
+        ThreadDeleteEvent,
+        ThreadMembersUpdate,
+        TypingStartEvent,
+        GuildMemberRemoveEvent,
+    )
+    from .types.command import GuildApplicationCommandPermissions
     from .message import Message
     from .partial_emoji import PartialEmoji
-    from .emoji import Emoji
-    from .abc import Snowflake
+    from .member import Member
+    from .threads import Thread
+    from .user import User
+    from .state import ConnectionState
+    from .guild import Guild
+
+    ReactionActionEvent = Union[MessageReactionAddEvent, MessageReactionRemoveEvent]
+    ReactionActionType = Literal['REACTION_ADD', 'REACTION_REMOVE']
 
 
-class Reaction:
-    """Represents a reaction to a message.
+__all__ = (
+    'RawMessageDeleteEvent',
+    'RawBulkMessageDeleteEvent',
+    'RawMessageUpdateEvent',
+    'RawReactionActionEvent',
+    'RawReactionClearEvent',
+    'RawReactionClearEmojiEvent',
+    'RawIntegrationDeleteEvent',
+    'RawThreadUpdateEvent',
+    'RawThreadDeleteEvent',
+    'RawThreadMembersUpdate',
+    'RawTypingEvent',
+    'RawMemberRemoveEvent',
+    'RawAppCommandPermissionsUpdateEvent',
+)
 
-    Depending on the way this object was created, some of the attributes can
-    have a value of ``None``.
 
-    .. container:: operations
+class _RawReprMixin:
+    __slots__: Tuple[str, ...] = ()
 
-        .. describe:: x == y
+    def __repr__(self) -> str:
+        value = ' '.join(f'{attr}={getattr(self, attr)!r}' for attr in self.__slots__)
+        return f'<{self.__class__.__name__} {value}>'
 
-            Checks if two reactions are equal. This works by checking if the emoji
-            is the same. So two messages with the same reaction will be considered
-            "equal".
 
-        .. describe:: x != y
+class RawMessageDeleteEvent(_RawReprMixin):
+    """Represents the event payload for a :func:`on_raw_message_delete` event.
 
-            Checks if two reactions are not equal.
+    Attributes
+    ------------
+    channel_id: :class:`int`
+        The channel ID where the deletion took place.
+    guild_id: Optional[:class:`int`]
+        The guild ID where the deletion took place, if applicable.
+    message_id: :class:`int`
+        The message ID that got deleted.
+    cached_message: Optional[:class:`Message`]
+        The cached message, if found in the internal message cache.
+    """
 
-        .. describe:: hash(x)
+    __slots__ = ('message_id', 'channel_id', 'guild_id', 'cached_message')
 
-            Returns the reaction's hash.
+    def __init__(self, data: MessageDeleteEvent) -> None:
+        self.message_id: int = int(data['id'])
+        self.channel_id: int = int(data['channel_id'])
+        self.cached_message: Optional[Message] = None
+        try:
+            self.guild_id: Optional[int] = int(data['guild_id'])
+        except KeyError:
+            self.guild_id: Optional[int] = None
 
-        .. describe:: str(x)
 
-            Returns the string form of the reaction's emoji.
+class RawBulkMessageDeleteEvent(_RawReprMixin):
+    """Represents the event payload for a :func:`on_raw_bulk_message_delete` event.
 
     Attributes
     -----------
-    emoji: Union[:class:`Emoji`, :class:`PartialEmoji`, :class:`str`]
-        The reaction emoji. May be a custom emoji, or a unicode emoji.
-    count: :class:`int`
-        Number of times this reaction was made
-    me: :class:`bool`
-        If the user sent this reaction.
-    message: :class:`Message`
-        Message this reaction is for.
+    message_ids: Set[:class:`int`]
+        A :class:`set` of the message IDs that were deleted.
+    channel_id: :class:`int`
+        The channel ID where the message got deleted.
+    guild_id: Optional[:class:`int`]
+        The guild ID where the message got deleted, if applicable.
+    cached_messages: List[:class:`Message`]
+        The cached messages, if found in the internal message cache.
     """
 
-    __slots__ = ('message', 'count', 'emoji', 'me')
+    __slots__ = ('message_ids', 'channel_id', 'guild_id', 'cached_messages')
 
-    def __init__(self, *, message: Message, data: ReactionPayload, emoji: Optional[Union[PartialEmoji, Emoji, str]] = None):
-        self.message: Message = message
-        self.emoji: Union[PartialEmoji, Emoji, str] = emoji or message._state.get_reaction_emoji(data['emoji'])
-        self.count: int = data.get('count', 1)
-        self.me: bool = data['me']
+    def __init__(self, data: BulkMessageDeleteEvent) -> None:
+        self.message_ids: Set[int] = {int(x) for x in data.get('ids', [])}
+        self.channel_id: int = int(data['channel_id'])
+        self.cached_messages: List[Message] = []
 
-    # TODO: typeguard
-    def is_custom_emoji(self) -> bool:
-        """:class:`bool`: If this is a custom emoji."""
-        return not isinstance(self.emoji, str)
+        try:
+            self.guild_id: Optional[int] = int(data['guild_id'])
+        except KeyError:
+            self.guild_id: Optional[int] = None
 
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, self.__class__) and other.emoji == self.emoji
 
-    def __ne__(self, other: object) -> bool:
-        if isinstance(other, self.__class__):
-            return other.emoji != self.emoji
-        return True
+class RawMessageUpdateEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_message_edit` event.
 
-    def __hash__(self) -> int:
-        return hash(self.emoji)
-
-    def __str__(self) -> str:
-        return str(self.emoji)
-
-    def __repr__(self) -> str:
-        return f'<Reaction emoji={self.emoji!r} me={self.me} count={self.count}>'
-
-    async def remove(self, user: Snowflake) -> None:
-        """|coro|
-
-        Remove the reaction by the provided :class:`User` from the message.
-
-        If the reaction is not your own (i.e. ``user`` parameter is not you) then
-        :attr:`~Permissions.manage_messages` is needed.
-
-        The ``user`` parameter must represent a user or member and meet
-        the :class:`abc.Snowflake` abc.
-
-        Parameters
-        -----------
-        user: :class:`abc.Snowflake`
-             The user or member from which to remove the reaction.
-
-        Raises
-        -------
-        HTTPException
-            Removing the reaction failed.
-        Forbidden
-            You do not have the proper permissions to remove the reaction.
-        NotFound
-            The user you specified, or the reaction's message was not found.
-        """
-
-        await self.message.remove_reaction(self.emoji, user)
-
-    async def clear(self) -> None:
-        """|coro|
-
-        Clears this reaction from the message.
-
-        You must have :attr:`~Permissions.manage_messages` to do this.
+    Attributes
+    -----------
+    message_id: :class:`int`
+        The message ID that got updated.
+    channel_id: :class:`int`
+        The channel ID where the update took place.
 
         .. versionadded:: 1.3
+    guild_id: Optional[:class:`int`]
+        The guild ID where the message got updated, if applicable.
 
-        .. versionchanged:: 2.0
-            This function will now raise :exc:`ValueError` instead of
-            ``InvalidArgument``.
+        .. versionadded:: 1.7
 
-        Raises
-        --------
-        HTTPException
-            Clearing the reaction failed.
-        Forbidden
-            You do not have the proper permissions to clear the reaction.
-        NotFound
-            The emoji you specified was not found.
-        TypeError
-            The emoji parameter is invalid.
+    data: :class:`dict`
+        The raw data given by the :ddocs:`gateway <topics/gateway#message-update>`
+    cached_message: Optional[:class:`Message`]
+        The cached message, if found in the internal message cache. Represents the message before
+        it is modified by the data in :attr:`RawMessageUpdateEvent.data`.
+    """
+
+    __slots__ = ('message_id', 'channel_id', 'guild_id', 'data', 'cached_message')
+
+    def __init__(self, data: MessageUpdateEvent) -> None:
+        self.message_id: int = int(data['id'])
+        self.channel_id: int = int(data['channel_id'])
+        self.data: MessageUpdateEvent = data
+        self.cached_message: Optional[Message] = None
+
+        try:
+            self.guild_id: Optional[int] = int(data['guild_id'])
+        except KeyError:
+            self.guild_id: Optional[int] = None
+
+
+class RawReactionActionEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_reaction_add` or
+    :func:`on_raw_reaction_remove` event.
+
+    Attributes
+    -----------
+    message_id: :class:`int`
+        The message ID that got or lost a reaction.
+    user_id: :class:`int`
+        The user ID who added the reaction or whose reaction was removed.
+    channel_id: :class:`int`
+        The channel ID where the reaction got added or removed.
+    guild_id: Optional[:class:`int`]
+        The guild ID where the reaction got added or removed, if applicable.
+    emoji: :class:`PartialEmoji`
+        The custom or unicode emoji being used.
+    member: Optional[:class:`Member`]
+        The member who added the reaction. Only available if ``event_type`` is ``REACTION_ADD`` and the reaction is inside a guild.
+
+        .. versionadded:: 1.3
+    message_author_id: Optional[:class:`int`]
+        The author ID of the message being reacted to. Only available if ``event_type`` is ``REACTION_ADD``.
+
+        .. versionadded:: 2.4
+    event_type: :class:`str`
+        The event type that triggered this action. Can be
+        ``REACTION_ADD`` for reaction addition or
+        ``REACTION_REMOVE`` for reaction removal.
+
+        .. versionadded:: 1.3
+    burst: :class:`bool`
+        Whether the reaction was a burst reaction, also known as a "super reaction".
+
+        .. versionadded:: 2.4
+    burst_colours: List[:class:`Colour`]
+        A list of colours used for burst reaction animation. Only available if ``burst`` is ``True``
+        and if ``event_type`` is ``REACTION_ADD``.
+
+        .. versionadded:: 2.0
+    """
+
+    __slots__ = (
+        'message_id',
+        'user_id',
+        'channel_id',
+        'guild_id',
+        'emoji',
+        'event_type',
+        'member',
+        'message_author_id',
+        'burst',
+        'burst_colours',
+    )
+
+    def __init__(self, data: ReactionActionEvent, emoji: PartialEmoji, event_type: ReactionActionType) -> None:
+        self.message_id: int = int(data['message_id'])
+        self.channel_id: int = int(data['channel_id'])
+        self.user_id: int = int(data['user_id'])
+        self.emoji: PartialEmoji = emoji
+        self.event_type: ReactionActionType = event_type
+        self.member: Optional[Member] = None
+        self.message_author_id: Optional[int] = _get_as_snowflake(data, 'message_author_id')
+        self.burst: bool = data.get('burst', False)
+        self.burst_colours: List[Colour] = [Colour.from_str(c) for c in data.get('burst_colours', [])]
+
+        try:
+            self.guild_id: Optional[int] = int(data['guild_id'])
+        except KeyError:
+            self.guild_id: Optional[int] = None
+
+    @property
+    def burst_colors(self) -> List[Colour]:
+        """An alias of :attr:`burst_colours`.
+
+        .. versionadded:: 2.4
         """
-        await self.message.clear_reaction(self.emoji)
+        return self.burst_colours
 
-    async def users(
-        self, *, limit: Optional[int] = None, after: Optional[Snowflake] = None
-    ) -> AsyncIterator[Union[Member, User]]:
-        """Returns an :term:`asynchronous iterator` representing the users that have reacted to the message.
 
-        The ``after`` parameter must represent a member
-        and meet the :class:`abc.Snowflake` abc.
+class RawReactionClearEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_reaction_clear` event.
 
-        .. versionchanged:: 2.0
+    Attributes
+    -----------
+    message_id: :class:`int`
+        The message ID that got its reactions cleared.
+    channel_id: :class:`int`
+        The channel ID where the reactions got cleared.
+    guild_id: Optional[:class:`int`]
+        The guild ID where the reactions got cleared.
+    """
 
-            ``limit`` and ``after`` parameters are now keyword-only.
+    __slots__ = ('message_id', 'channel_id', 'guild_id')
 
-        Examples
-        ---------
+    def __init__(self, data: ReactionClearEvent) -> None:
+        self.message_id: int = int(data['message_id'])
+        self.channel_id: int = int(data['channel_id'])
 
-        Usage ::
+        try:
+            self.guild_id: Optional[int] = int(data['guild_id'])
+        except KeyError:
+            self.guild_id: Optional[int] = None
 
-            # I do not actually recommend doing this.
-            async for user in reaction.users():
-                await channel.send(f'{user} has reacted with {reaction.emoji}!')
 
-        Flattening into a list: ::
+class RawReactionClearEmojiEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_reaction_clear_emoji` event.
 
-            users = [user async for user in reaction.users()]
-            # users is now a list of User...
-            winner = random.choice(users)
-            await channel.send(f'{winner} has won the raffle.')
+    .. versionadded:: 1.3
 
-        Parameters
-        ------------
-        limit: Optional[:class:`int`]
-            The maximum number of results to return.
-            If not provided, returns all the users who
-            reacted to the message.
-        after: Optional[:class:`abc.Snowflake`]
-            For pagination, reactions are sorted by member.
+    Attributes
+    -----------
+    message_id: :class:`int`
+        The message ID that got its reactions cleared.
+    channel_id: :class:`int`
+        The channel ID where the reactions got cleared.
+    guild_id: Optional[:class:`int`]
+        The guild ID where the reactions got cleared.
+    emoji: :class:`PartialEmoji`
+        The custom or unicode emoji being removed.
+    """
 
-        Raises
-        --------
-        HTTPException
-            Getting the users for the reaction failed.
+    __slots__ = ('message_id', 'channel_id', 'guild_id', 'emoji')
 
-        Yields
-        --------
-        Union[:class:`User`, :class:`Member`]
-            The member (if retrievable) or the user that has reacted
-            to this message. The case where it can be a :class:`Member` is
-            in a guild message context. Sometimes it can be a :class:`User`
-            if the member has left the guild.
-        """
+    def __init__(self, data: ReactionClearEmojiEvent, emoji: PartialEmoji) -> None:
+        self.emoji: PartialEmoji = emoji
+        self.message_id: int = int(data['message_id'])
+        self.channel_id: int = int(data['channel_id'])
 
-        if not isinstance(self.emoji, str):
-            emoji = f'{self.emoji.name}:{self.emoji.id}'
-        else:
-            emoji = self.emoji
+        try:
+            self.guild_id: Optional[int] = int(data['guild_id'])
+        except KeyError:
+            self.guild_id: Optional[int] = None
 
-        if limit is None:
-            limit = self.count
 
-        while limit > 0:
-            retrieve = min(limit, 100)
+class RawIntegrationDeleteEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_integration_delete` event.
 
-            message = self.message
-            guild = message.guild
-            state = message._state
-            after_id = after.id if after else None
+    .. versionadded:: 2.0
 
-            data = await state.http.get_reaction_users(message.channel.id, message.id, emoji, retrieve, after=after_id)
+    Attributes
+    -----------
+    integration_id: :class:`int`
+        The ID of the integration that got deleted.
+    application_id: Optional[:class:`int`]
+        The ID of the bot/OAuth2 application for this deleted integration.
+    guild_id: :class:`int`
+        The guild ID where the integration got deleted.
+    """
 
-            if data:
-                limit -= len(data)
-                after = Object(id=int(data[-1]['id']))
-            else:
-                # Terminate loop if we received no data
-                limit = 0
+    __slots__ = ('integration_id', 'application_id', 'guild_id')
 
-            if guild is None or isinstance(guild, Object):
-                for raw_user in reversed(data):
-                    yield User(state=state, data=raw_user)
+    def __init__(self, data: IntegrationDeleteEvent) -> None:
+        self.integration_id: int = int(data['id'])
+        self.guild_id: int = int(data['guild_id'])
 
-                continue
+        try:
+            self.application_id: Optional[int] = int(data['application_id'])
+        except KeyError:
+            self.application_id: Optional[int] = None
 
-            for raw_user in reversed(data):
-                member_id = int(raw_user['id'])
-                member = guild.get_member(member_id)
 
-                yield member or User(state=state, data=raw_user)
+class RawThreadUpdateEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_thread_update` event.
+
+    .. versionadded:: 2.0
+
+    Attributes
+    ----------
+    thread_id: :class:`int`
+        The ID of the thread that was updated.
+    thread_type: :class:`discord.ChannelType`
+        The channel type of the updated thread.
+    guild_id: :class:`int`
+        The ID of the guild the thread is in.
+    parent_id: :class:`int`
+        The ID of the channel the thread belongs to.
+    data: :class:`dict`
+        The raw data given by the :ddocs:`gateway <topics/gateway#thread-update>`
+    thread: Optional[:class:`discord.Thread`]
+        The thread, if it could be found in the internal cache.
+    """
+
+    __slots__ = ('thread_id', 'thread_type', 'parent_id', 'guild_id', 'data', 'thread')
+
+    def __init__(self, data: ThreadUpdateEvent) -> None:
+        self.thread_id: int = int(data['id'])
+        self.thread_type: ChannelType = try_enum(ChannelType, data['type'])
+        self.guild_id: int = int(data['guild_id'])
+        self.parent_id: int = int(data['parent_id'])
+        self.data: ThreadUpdateEvent = data
+        self.thread: Optional[Thread] = None
+
+
+class RawThreadDeleteEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_thread_delete` event.
+
+    .. versionadded:: 2.0
+
+    Attributes
+    ----------
+    thread_id: :class:`int`
+        The ID of the thread that was deleted.
+    thread_type: :class:`discord.ChannelType`
+        The channel type of the deleted thread.
+    guild_id: :class:`int`
+        The ID of the guild the thread was deleted in.
+    parent_id: :class:`int`
+        The ID of the channel the thread belonged to.
+    thread: Optional[:class:`discord.Thread`]
+        The thread, if it could be found in the internal cache.
+    """
+
+    __slots__ = ('thread_id', 'thread_type', 'parent_id', 'guild_id', 'thread')
+
+    def __init__(self, data: ThreadDeleteEvent) -> None:
+        self.thread_id: int = int(data['id'])
+        self.thread_type: ChannelType = try_enum(ChannelType, data['type'])
+        self.guild_id: int = int(data['guild_id'])
+        self.parent_id: int = int(data['parent_id'])
+        self.thread: Optional[Thread] = None
+
+
+class RawThreadMembersUpdate(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_thread_member_remove` event.
+
+    .. versionadded:: 2.0
+
+    Attributes
+    ----------
+    thread_id: :class:`int`
+        The ID of the thread that was updated.
+    guild_id: :class:`int`
+        The ID of the guild the thread is in.
+    member_count: :class:`int`
+        The approximate number of members in the thread. This caps at 50.
+    data: :class:`dict`
+        The raw data given by the :ddocs:`gateway <topics/gateway#thread-members-update>`.
+    """
+
+    __slots__ = ('thread_id', 'guild_id', 'member_count', 'data')
+
+    def __init__(self, data: ThreadMembersUpdate) -> None:
+        self.thread_id: int = int(data['id'])
+        self.guild_id: int = int(data['guild_id'])
+        self.member_count: int = int(data['member_count'])
+        self.data: ThreadMembersUpdate = data
+
+
+class RawTypingEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_typing` event.
+
+    .. versionadded:: 2.0
+
+    Attributes
+    ----------
+    channel_id: :class:`int`
+        The ID of the channel the user started typing in.
+    user_id: :class:`int`
+        The ID of the user that started typing.
+    user: Optional[Union[:class:`discord.User`, :class:`discord.Member`]]
+        The user that started typing, if they could be found in the internal cache.
+    timestamp: :class:`datetime.datetime`
+        When the typing started as an aware datetime in UTC.
+    guild_id: Optional[:class:`int`]
+        The ID of the guild the user started typing in, if applicable.
+    """
+
+    __slots__ = ('channel_id', 'user_id', 'user', 'timestamp', 'guild_id')
+
+    def __init__(self, data: TypingStartEvent, /) -> None:
+        self.channel_id: int = int(data['channel_id'])
+        self.user_id: int = int(data['user_id'])
+        self.user: Optional[Union[User, Member]] = None
+        self.timestamp: datetime.datetime = datetime.datetime.fromtimestamp(data['timestamp'], tz=datetime.timezone.utc)
+        self.guild_id: Optional[int] = _get_as_snowflake(data, 'guild_id')
+
+
+class RawMemberRemoveEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_member_remove` event.
+
+    .. versionadded:: 2.0
+
+    Attributes
+    ----------
+    user: Union[:class:`discord.User`, :class:`discord.Member`]
+        The user that left the guild.
+    guild_id: :class:`int`
+        The ID of the guild the user left.
+    """
+
+    __slots__ = ('user', 'guild_id')
+
+    def __init__(self, data: GuildMemberRemoveEvent, user: User, /) -> None:
+        self.user: Union[User, Member] = user
+        self.guild_id: int = int(data['guild_id'])
+
+
+class RawAppCommandPermissionsUpdateEvent(_RawReprMixin):
+    """Represents the payload for a :func:`on_raw_app_command_permissions_update` event.
+
+    .. versionadded:: 2.0
+
+    Attributes
+    ----------
+    target_id: :class:`int`
+        The ID of the command or application whose permissions were updated.
+        When this is the application ID instead of a command ID, the permissions
+        apply to all commands that do not contain explicit overwrites.
+    application_id: :class:`int`
+        The ID of the application that the command belongs to.
+    guild: :class:`~discord.Guild`
+        The guild where the permissions were updated.
+    permissions: List[:class:`~discord.app_commands.AppCommandPermissions`]
+        List of new permissions for the app command.
+    """
+
+    __slots__ = ('target_id', 'application_id', 'guild', 'permissions')
+
+    def __init__(self, *, data: GuildApplicationCommandPermissions, state: ConnectionState):
+        self.target_id: int = int(data['id'])
+        self.application_id: int = int(data['application_id'])
+        self.guild: Guild = state._get_or_create_unavailable_guild(int(data['guild_id']))
+        self.permissions: List[AppCommandPermissions] = [
+            AppCommandPermissions(data=perm, guild=self.guild, state=state) for perm in data['permissions']
+        ]

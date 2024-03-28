@@ -28,7 +28,7 @@ from typing import Any, TYPE_CHECKING, List, Optional, Sequence, Union
 
 from ..enums import AppCommandOptionType, AppCommandType, Locale
 from ..errors import DiscordException, HTTPException, _flatten_error_dict
-
+from ..utils import _human_join
 __all__ = (
     'AppCommandError',
     'CommandInvokeError',
@@ -241,13 +241,8 @@ class MissingAnyRole(CheckFailure):
 
     def __init__(self, missing_roles: SnowflakeList) -> None:
         self.missing_roles: SnowflakeList = missing_roles
+        fmt = _human_join([f"'{role}'" for role in missing_roles])
 
-        missing = [f"'{role}'" for role in missing_roles]
-
-        if len(missing) > 2:
-            fmt = '{}, or {}'.format(', '.join(missing[:-1]), missing[-1])
-        else:
-            fmt = ' or '.join(missing)
 
         message = f'You are missing at least one of the required roles: {fmt}'
         super().__init__(message)
@@ -269,13 +264,8 @@ class MissingPermissions(CheckFailure):
 
     def __init__(self, missing_permissions: List[str], *args: Any) -> None:
         self.missing_permissions: List[str] = missing_permissions
-
         missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in missing_permissions]
-
-        if len(missing) > 2:
-            fmt = '{}, and {}'.format(", ".join(missing[:-1]), missing[-1])
-        else:
-            fmt = ' and '.join(missing)
+        fmt = _human_join(missing, final='and')
         message = f'You are missing {fmt} permission(s) to run this command.'
         super().__init__(message, *args)
 
@@ -298,11 +288,7 @@ class BotMissingPermissions(CheckFailure):
         self.missing_permissions: List[str] = missing_permissions
 
         missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in missing_permissions]
-
-        if len(missing) > 2:
-            fmt = '{}, and {}'.format(", ".join(missing[:-1]), missing[-1])
-        else:
-            fmt = ' and '.join(missing)
+        fmt = _human_join(missing, final='and')
         message = f'Bot requires {fmt} permission(s) to run this command.'
         super().__init__(message, *args)
 
