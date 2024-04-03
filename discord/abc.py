@@ -120,7 +120,12 @@ class _Undefined:
 _undefined: Any = _Undefined()
 
 
-async def _single_delete_strategy(messages: Iterable[Message], *, reason: Optional[str] = None):
+async def _single_delete_strategy(
+        messages: Iterable[Message],
+        *,
+        reason: Optional[str] = None
+    ) -> None:
+    """Delete messages one by one."""
     for m in messages:
         await m.delete()
 
@@ -137,10 +142,19 @@ async def _purge_helper(
     bulk: bool = True,
     reason: Optional[str] = None,
 ) -> List[Message]:
+    """Helper function for :meth:`TextChannel.purge` and :meth:`Thread.purge`."""
+    
     if check is MISSING:
         check = lambda m: True
 
-    iterator = channel.history(limit=limit, before=before, after=after, oldest_first=oldest_first, around=around)
+    iterator = channel.history(
+        limit=limit,
+        before=before,
+        after=after, 
+        oldest_first=oldest_first, 
+        around=around
+        )
+    
     ret: List[Message] = []
     count = 0
 

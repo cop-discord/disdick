@@ -1,98 +1,266 @@
-# THIS WAS MADE IN NANO I AM NOT PRESSING SPACE IN NANO BRAH ILL CLEAN IT UP LATER
-
+# Cleaned up for you, since you forgot... daniel :P
+# I also neatened up the code a bit, and added some descriptions.
 
 import asyncio,datetime,typing
 from durations_nlp import Duration
 from .member import Member
 from .guild import Guild
 from .user import User
-import .utils as utils
+from discord.utils import utcnow
 from .object import Object
 from xxhash import xxh3_64_hexdigest as keyhash
+
+
 class InvalidType(Exception):
-	def __init__(self,types:typing.Any):
+	"""
+	An exception raised when an invalid type is passed.
+	"""
+
+	def __init__(
+			self,
+			types: typing.Any
+		) -> None:	
 		self.types = types
 		super.__init___(f"Only Types Useable are {', '.join(t for t in self.types)}")
 
 class Punishments:
+	"""
+	A handler to manage punishments in a guild.
+	"""
 	def __init__(self):
 		self.thresholds = {}
 		self.users = {}
 		self.temp_bans = {}
 		self.futures = {}
 
+	# Add a punishment to a guild.
+	async def add_punishment(
+			self,
+			guild_id: int,
+			amount: int,
+			punishment: str,
+			time: int = None
+		):
+		"""
+		Add a punishment to a guild.
 
-	async def add_punishment(self,guild_id:int,amount:int,punishment:str,time:int=None):
-		punishments={'ban','kick','timeout'}
-		if punishment not in punishments: raise InvalidType(punishments)
-		if guild_id not in self.thresholds: self.thresholds[guild_id]={}
-		if guild_id not in self.users: self.users[guild_id]={}
-		if punishment != "timeout": self.thresholds[guild_id][amount]=punishment
-		else: self.thresholds[guild_id][amount]=f"timeout-{time}"
+		Parameters:
+
+		- guild_id (int): The ID of the guild.
+		- amount (int): the amount? of what...
+		- punishment (str): The punishment to apply.
+		- time (int): The time to apply the punishment for. (Only for timeouts)
+		
+		"""
+		
+		punishments = {
+			'ban',
+			'kick',
+			'timeout',
+			}
+		
+		if punishment not in punishments:
+			raise InvalidType(punishments)
+		
+		if guild_id not in self.thresholds:  
+			self.thresholds[guild_id] = {}
+
+		if guild_id not in self.users:
+			self.users[guild_id] = {}
+
+		if punishment != "timeout":
+			self.thresholds[guild_id][amount] = punishment
+		else:
+			self.thresholds[guild_id][amount] = f"timeout-{time}"
+
 		return True
+	
+	# Remove a punishment from a guild.
+	async def remove_punishment(
+			self,
+			guild_id: int,
+			amount: int
+		):
+		"""
+		Remove a punishment from a guild.
+		
+		Parameters:
+		
+		- guild_id (int): The ID of the guild.
+		- amount (int): The amount to remove.
+		"""
 
-	async def remove_punishment(self,guild_id:int,amount:int):
-		if guild_id not in self.thresholds: return False
-		if amount not in self.thresholds[guild_id]: return False
+
+		if guild_id not in self.thresholds:
+			return False
+		if amount not in self.thresholds[guild_id]:
+			return False
+		
 		self.thresholds[guild_id].pop(amount)
 		return True
 
-	async def clear_threshold(self,guild:Guild,member:typing.Union[Member,User]):
-		if guild.id not in self.users: return 0
-		if member.id not in self.users[guild.id]: return 0
+	# Clear the threshold for a user in a guild.
+	async def clear_threshold(
+			self,
+			guild: Guild,
+			member: typing.Union[Member,User]
+		):
+		"""
+		Clear the threshold for a user in a guild.
+		
+		Parameters:
+		
+		- guild (Guild): The guild to clear the threshold for.
+		- member (Union[Member,User]): The member to clear the threshold for.
+		"""
+
+		if guild.id not in self.users:
+			return 0
+		if member.id not in self.users[guild.id]:
+			return 0
+		
 		self.users[guild.id][member.id]=0
 		return 0
 
-	async def do_unban(self,guild:Guild,time:int,user:int):
+	# Clears a ban from a user after a certain amount of time.
+	async def do_unban(
+			self,
+			guild: Guild,
+			time: int,
+			user: int
+		):
+		"""
+		Unban a user after a certain amount of time.
+
+		Parameters:
+
+		- guild (Guild): The guild to unban the user from.
+		- time (int): The time to unban the user after.
+		- user (int): The user to unban.
+		"""
+
 		await asyncio.sleep(time)
 		return await guild.smart_unban(user)
 
-	async def cancel_tempban(self,guild:Guild,member:User):
-		key=keyhash(f"tb{guild.id}{member.id}")
-		if key in self.futures: self.futures[key].cancel()
-		else: return False
+	# Cancel a temporary ban for a user in a guild.
+	async def cancel_tempban(
+			self,
+			guild: Guild,
+			member: User
+		):
+		"""
+		Cancel a temporary ban for a user in a guild.
+		
+		Parameters:
+		
+		- guild (Guild): The guild to cancel the temporary ban in.
+		- member (User): The user to cancel the temporary ban for.
+		"""
+
+		key=keyhash(
+			f"tb{guild.id}{member.id}"
+			)
+		
+		if key in self.futures:
+			self.futures[key].cancel()
+		else:
+			return False
+		
 		return True
 
-	async def tempban(self,guild:Guild,member:Member,time:str,*,reason:str=None):
+	# Temporarily ban a user in a guild.
+	async def tempban(
+			self,
+			guild: Guild,
+			member: Member,
+			time: str,
+			*,
+			reason: str = None
+			):
+		"""
+		Temporarily ban a user in a guild.
+
+		Parameters:
+
+		- guild (Guild): The guild to ban the user in.
+		- member (Member): The member to ban.
+		- time (str): The time to ban the user for.
+		- reason (str): The reason for the ban.
+		"""
+
 		now=int(datetime.datetime.now().timestamp())
-		if guild.id not in self.temp_bans: self.temp_bans[gulld.id={}
+		if guild.id not in self.temp_bans:
+			self.temp_bans[guild.id]={}
+
 		convert=Duration(time).seconds
-		if convert == 0: raise Exception("You're retarded.")
-		until=datetime.datetime.now()+datetime.timedelta(seconds=convert)
-		self.temp_bans[guild.id][member.id]=int(until.timestamp())
+		if convert == 0:
+			raise ValueError("You're unable to temporary ban a user for 0 seconds.")
+		
+		until=datetime.datetime.now() + datetime.timedelta(seconds=convert)
+		self.temp_bans[guild.id][member.id] = int(until.timestamp())
 		await member.ban(reason=reason)
-		t=int(until.timestamp())-now
-		future=asyncio.ensure_future(self.do_unban(guild,int(t),member.id)
-		hash=keyhash(f"tb{guild.id}{member.id}")
-		if hash in self.futures: self.futures[hash].cancel()
+
+		t=int(until.timestamp()) - now
+		future = asyncio.ensure_future(self.do_unban(guild,int(t),member.id))
+		hash=keyhash(
+			f"tb{guild.id}{member.id}"
+			)
+		
+		if hash in self.futures:
+			self.futures[hash].cancel()
+
 		self.futures[hash]=future
 		return True
 
-	async def decide_punishment(self,guild:Guild,amount:int):
-		ret=None
-		for s in sorted(self.thresholds[guild.id].keys(),reverse=True):
+	# Decide the punishment for a user in a guild.
+	async def decide_punishment(
+			self,
+			guild: Guild,
+			amount: int
+		):
+		"""
+		Decide the punishment for a user in a guild.
+		
+		Parameters:
+		
+		- guild (Guild): The guild to decide the punishment for.
+		- amount (int): The amount to decide the punishment for.
+		"""
+
+		ret = None
+		for key in sorted(self.thresholds[guild.id].keys(),reverse=True):
 			if amount >= key:
 				ret = key
 				break
-		if ret: return self.thresholds[guild.id][ret]
+		if ret:
+			return self.thresholds[guild.id][ret]
 		return ret
 
-	async def punish(self,guild:Guild,member:Member,*,reason:str=None):
+	# Punish a user in a guild.
+	async def punish(
+			self,
+			guild: Guild,
+			member: Member,
+			*,
+			reason: str = None
+			):
 		if guild.id in self.thresholds:
-			if guild.id not in self.users: self.users[guild.id]={}
-			if member.id in self.users[guild_id]
-				self.users[guild.id][member.id]+=1
-			else: self.users[guild.id][member.id]=1
-			amounts=list(self.thresholds[guild.id].keys())
+			if guild.id not in self.users: 
+				self.users[guild.id] = {}
+			if member.id in self.users[guild.id]:
+				self.users[guild.id][member.id] += 1
+			else: 
+				self.users[guild.id][member.id]=1
+
 			current=self.users[guild.id][member.id]
-			punishment=await self.decide_punishment(guild,current)
+			punishment=await self.decide_punishment(guild, current)
 			if punishment:
 				if punishment == "ban":
-					return await guild.ban(Object(member.id),reason=reason)
+					return await guild.ban(Object(member.id), reason=reason)
 				if punishment == "kick":
 					return await member.kick(reason=reason)
 				else:
 					time=int(punishment.split("-")[1])
-					return await member.timeout(utils.utcnow()+datetime.timedelta(seconds=time),reason=reason)
+					return await member.timeout(utcnow() + datetime.timedelta(seconds=time), reason=reason)
 			else:
 				return False

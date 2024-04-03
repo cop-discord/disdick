@@ -29,6 +29,7 @@ Installing
 ----------
 
 **Python 3.8 or higher is required**
+Now working for Python 3.12+
 
 To install the library without full voice support, you can just run the following command:
 
@@ -47,8 +48,8 @@ To install the development version, do the following:
 
 .. code:: sh
 
-    $ git clone https://github.com/cop-discord/disfart
-    $ cd disfart
+    $ git clone https://github.com/cop-discord/disdick
+    $ cd disdick
     $ python3 -m pip install -U .[voice]
 
 

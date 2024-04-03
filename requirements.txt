@@ -4,3 +4,4 @@ humanfriendly
 orjson
 psutil
 typing_extensions
+setuptools

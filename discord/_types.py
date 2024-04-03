@@ -30,5 +30,5 @@ if TYPE_CHECKING:
     from .client import Client
 
     ClientT = TypeVar('ClientT', bound=Client, covariant=True, default=Client)
-else:
-    ClientT = TypeVar('ClientT', bound='Client', covariant=True)
+    if ClientT is not Client:
+        ClientT = TypeVar('ClientT', bound=Client, covariant=True)
