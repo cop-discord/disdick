@@ -1888,7 +1888,7 @@ class Message(PartialMessage, Hashable):
         return self.guild.me.id in utils.find_mentions(self.content)
 
     @property
-    def invites(self) -> List[str, ...]:
+    def invites(self) -> List[str, Any]:
         """
         This property returns invite links from the current message content.
 
@@ -1907,7 +1907,7 @@ class Message(PartialMessage, Hashable):
         return utils.find_invites(self.content)
 
     @property
-    def emojis(self) -> List[str, ...]:
+    def emojis(self) -> List[str, Any]:
         """
         This property returns a list of emojis from the current message content.
 
@@ -1927,7 +1927,7 @@ class Message(PartialMessage, Hashable):
 
 
     @property
-    def user_mentions(self) -> List[Union[User, Self], ...]:
+    def user_mentions(self) -> List[Union[User, Self], Any]:
         """
         This property returns a list of user mentions found in the current message content.
 

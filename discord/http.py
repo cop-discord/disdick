@@ -525,8 +525,8 @@ class HTTPClient:
     ) -> None:
         self.loop: asyncio.AbstractEventLoop = loop
         self.local_addr=local_addr
-        self.connector: aiohttp.TCPConnector(family=socket.AF_INET,limit=0,local_addr=self.local_addr) = connector or MISSING
-        self.__session: aiohttp.ClientSession(connector=self.connector,resolver=aiohttp.AsyncResolver()) = MISSING  # filled in static_login
+        self.connector: aiohttp.TCPConnector = aiohttp.TCPConnector(family=socket.AF_INET,limit=0,local_addr=self.local_addr)
+        self.__session: aiohttp.ClientSession = aiohttp.ClientSession(connector=self.connector,resolver=aiohttp.AsyncResolver()) # filled in static_login
         # Route key -> Bucket hash
         self._bucket_hashes: Dict[str, str] = {}
         # Bucket Hash + Major Parameters -> Rate limit
@@ -772,11 +772,8 @@ class HTTPClient:
                             retry_after: float = data['retry_after']
                             if self.max_ratelimit_timeout and retry_after > self.max_ratelimit_timeout:
                                 _log.warning(
-                                    'We are being rate limited. %s %s responded with 429. Timeout of %.2f was too long, erroring instead.',
-                                    method,
-                                    url,
-                                    retry_after,
-                                )
+                                    f'We are being rate limited. {method} {url} responded with 429. Timeout of {retry_after}.2f was too long, erroring instead.',
+                                    )
                                 raise RateLimited(retry_after)
 
                             fmt = 'We are being rate limited. %s %s responded with 429. Retrying in %.2f seconds.'
