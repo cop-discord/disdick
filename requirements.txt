@@ -5,3 +5,5 @@ orjson
 psutil
 typing_extensions
 setuptools
+durations_nlp
+Xxhash
