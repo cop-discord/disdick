@@ -1302,7 +1302,14 @@ class Webhook(BaseWebhook):
             'name': name,
             'channel_id': channel.id,
             'guild_id': channel.guild.id,
-            'user': {'username': user.name, 'discriminator': user.discriminator,'global_name': user.global_name, 'id': user.id, 'avatar': user._avatar},
+            'user': {
+                'username': user.name,
+                'discriminator': user.discriminator,
+                'id': user.id,
+                'avatar': user._avatar,
+                'avatar_decoration_data': user._avatar_decoration_data,
+                'global_name': user.global_name,
+            },
         }
 
         state = channel._state
