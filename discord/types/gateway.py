@@ -40,7 +40,7 @@ from .message import Message
 from .sticker import GuildSticker
 from .appinfo import GatewayAppInfo, PartialAppInfo
 from .guild import Guild, UnavailableGuild
-from .user import User
+from .user import User, AvatarDecorationData
 from .threads import Thread, ThreadMember
 from .scheduled_event import GuildScheduledEvent
 from .audit_log import AuditLogEntry
@@ -227,7 +227,8 @@ class GuildMemberUpdateEvent(TypedDict):
     mute: NotRequired[bool]
     pending: NotRequired[bool]
     communication_disabled_until: NotRequired[str]
-
+    avatar_decoration_data: NotRequired[AvatarDecorationData]
+    
 
 class GuildEmojisUpdateEvent(TypedDict):
     guild_id: Snowflake
