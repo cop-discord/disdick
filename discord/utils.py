@@ -790,6 +790,38 @@ async def async_all(
             return False
     return True
 
+def find_match(query: str, data: Union[List[str], Dict[str, Any]], distanced: Optional[bool] = True) -> Any:
+    """
+    This function is used to find the closest match for a given query in a given data structure.
+
+    The function uses the fast-string-match library to perform the matching.
+
+    Parameters:
+        query: (str) The query to search for.
+        data: (Union[List[str], Dict[str, Any]]) The data structure to search in.
+        distanced: (Optional[bool]) Whether to use a distance-based or a simple string-based matching algorithm. Defaults to True.
+
+    Returns:
+        (Any) The closest match for the given query in the given data structure.
+    """
+    from fast_string_match import closest_match_distance, closest_match
+    value = None
+    if not data:
+        return None
+
+    lookup_func = closest_match_distance if distanced else closest_match
+
+    if isinstance(data, dict):
+        _data = list(data.keys())
+    else:
+        _data = data
+
+    if match := lookup_func(query, _data):
+        value = data[match]
+
+    del _data
+    return value
+
 def chunk_list(data: list, amount: int) -> List[list]:
     """
     Chunks a list into sublists of a specified size.
