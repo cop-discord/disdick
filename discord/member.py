@@ -514,8 +514,20 @@ class Member(discord.abc.Messageable, _UserTag):
 
     @property
     def position(self) -> int:
-        """ Integer: the member's join position in the guild """
-        return sorted(self.guild.members,key=lambda x: x.joined_at).index(self)+1
+        """Returns the join position of the member in the guild.
+
+        If the member's join position cannot be determined (e.g., if the member is not part
+        of any guild), it returns 0.
+
+        Returns:
+            int: The join position of the member in the guild.
+        """
+        guild: Guild | None = getattr(self, "guild", None)
+        return (
+            0
+            if not guild
+            else sum(m.joined_at < self.joined_at for m in guild.members) + 1
+        )
 
     @status.setter
     def status(self, value: Status) -> None:
