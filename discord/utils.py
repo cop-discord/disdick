@@ -57,6 +57,7 @@ from typing import (
 )
 from . import regex
 import unicodedata
+from itertools import islice
 from base64 import b64encode,b64decode
 from bisect import bisect_left
 import datetime
@@ -329,19 +330,6 @@ async def image_validator(url:str,proxy:str=None):
             if request.status != 200: return False
             if len(await request.read()) == 0: return False
             return True
-        
-def chunk_list(data: list, amount: int) -> list[list]:
-    # makes lists of a big list of values every x amount of values, this shit is ass but it works so idfc fuck it
-    if len(data) < amount:
-        _chunks = [data]
-    else:
-        chunks = zip(*[iter(data)]*amount)
-        _chunks = list(list(_) for _ in chunks)
-    from itertools import chain
-    l = list(chain.from_iterable(_chunks))
-    null_check = [d for d in data if d not in l]
-    if len(null_check) > 0: _chunks.append(null_check)
-    return _chunks
 
 
 def oauth_url(
@@ -630,7 +618,7 @@ def get(iterable: _Iter[T], /, **attrs: Any) -> Union[Optional[T], Coro[Optional
     )
 
 
-def find_emojis(text: str) -> List[str, ...]:
+def find_emojis(text: str) -> List[str]:
     """
     This function is used to locate and extract all emojis present in a given text.
 
@@ -659,7 +647,7 @@ def _human_join(seq: Sequence[str], /, *, delimiter: str = ', ', final: str = 'o
 
     return delimiter.join(seq[:-1]) + f' {final} {seq[-1]}'
 
-def find_invites(text: str) -> List[str, ...]:
+def find_invites(text: str) -> List[str]:
     """
     This function is used to find every invite link present in a given text.
 
@@ -676,7 +664,7 @@ def find_invites(text: str) -> List[str, ...]:
     return regex.discord_invite.findall(text)
 
 
-def find_mentions(text: str) -> List[int, ...]:
+def find_mentions(text: str) -> List[str]:
     """
     This function is used to find every user mention present in a given text.
 
@@ -801,6 +789,19 @@ async def async_all(
         if not elem:
             return False
     return True
+
+def chunk_list(data: list, amount: int) -> List[list]:
+    """
+    Chunks a list into sublists of a specified size.
+
+    Args:
+        data: The list to be chunked.
+        amount: The number of elements in each sublist.
+
+    Returns:
+        A list of sublists.
+    """
+    return [list(islice(data, i, i + amount)) for i in range(0, len(data), amount)]
 
 
 async def sane_wait_for(futures: Iterable[Awaitable[T]], *, timeout: Optional[float]) -> Set[asyncio.Task[T]]:
