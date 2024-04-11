@@ -26,12 +26,17 @@ from .snowflake import Snowflake
 from typing import Literal, Optional, Any, TypedDict
 from typing_extensions import NotRequired
 
+class AvatarDecorationData(TypedDict):
+    asset: str
+    sku_id: Snowflake
+
 class PartialUser(TypedDict):
     id: Snowflake
     username: str
     discriminator: str
     global_name: Optional[str]
     avatar: Optional[str]
+    avatar_decoration_data: NotRequired[AvatarDecorationData]
 
 
 ConnectionType = Literal[
