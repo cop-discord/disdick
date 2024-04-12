@@ -502,7 +502,7 @@ class TextChannel(discord.abc.Messageable, discord.abc.GuildChannel, Hashable):
         lock = Lock()
         async def do_purge(messages: List[int]) -> None:
             async with lock:
-                await self._state.http.delete_messages(self.id, messages, proxy, reason)
+                await self._state.http.delete_messages(channel_id = self.id, message_ids = messages, proxy = proxy, reason = reason)
             return
         await gather(*[do_purge(_) for _ in chunks])
         del chunks
