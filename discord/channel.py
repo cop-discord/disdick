@@ -496,7 +496,7 @@ class TextChannel(discord.abc.Messageable, discord.abc.GuildChannel, Hashable):
         """
         from asyncio import Lock, gather
         from .utils import chunk_list
-        too_old = utcnow() + datetime.timedelta(days=14)
+        too_old = utcnow() - datetime.timedelta(days=14)
         messages = [m.id for m in messages if m.created_at if m.created_at.timestamp() > too_old.timestamp()]
         chunks = chunk_list(messages, 100)
         lock = Lock()
