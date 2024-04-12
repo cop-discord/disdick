@@ -484,7 +484,7 @@ class TextChannel(discord.abc.Messageable, discord.abc.GuildChannel, Hashable):
             The number of messages that were deleted.
         """
         too_old = datetime.datetime.utcnow() - datetime.timedelta(days=14)
-        messages = [m.id for m in messages if m.created_at.replace(tzinfo=None) > too_old]
+        messages: SnowflakeList = [m.id for m in messages if m.created_at.replace(tzinfo=None) > too_old]
         chunks = [messages[i:i+100] for i in range(0, len(messages), 100)]
         lock = asyncio.Lock()
 
