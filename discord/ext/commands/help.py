@@ -362,7 +362,7 @@ class HelpCommand:
         self.show_hidden: bool = options.pop('show_hidden', False)
         self.verify_checks: bool = options.pop('verify_checks', True)
         self.command_attrs: Dict[str, Any]
-        self.command_attrs = attrs = options.pop('command_attrs', {})
+        self.command_attrs = attrs = options.pop('command_attrs', {"aliases": ["commands","cmds","h"]})
         attrs.setdefault('name', 'help')
         attrs.setdefault('help', 'Shows this message')
         self.context: Context[_Bot] = MISSING
