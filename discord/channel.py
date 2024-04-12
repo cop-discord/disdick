@@ -58,6 +58,8 @@ from .partial_emoji import _EmojiTag, PartialEmoji
 from .flags import ChannelFlags
 from .http import handle_message_parameters
 
+import asyncio
+
 __all__ = (
     'TextChannel',
     'VoiceChannel',
