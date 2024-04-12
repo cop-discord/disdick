@@ -49,7 +49,7 @@ from .permissions import PermissionOverwrite, Permissions
 from .enums import ChannelType, ForumLayoutType, ForumOrderType, PrivacyLevel, try_enum, VideoQualityMode, EntityType
 from .mixins import Hashable
 from . import utils
-from .utils import MISSING, utcnow
+from .utils import MISSING
 from .asset import Asset
 from .errors import ClientException
 from .stage_instance import StageInstance
@@ -454,58 +454,48 @@ class TextChannel(discord.abc.Messageable, discord.abc.GuildChannel, Hashable):
         message_ids: SnowflakeList = [m.id for m in messages]
         await self._state.http.delete_messages(self.id, message_ids, reason=reason)
 
-    async def fast_purge(self, messages: List[Message], proxy: Optional[str] = None, reason: Optional[str] = None) -> int:
+    async def fast_purge(
+        self, 
+        messages: List[Message], 
+        proxy: Optional[str] = None, 
+        reason: Optional[str] = None
+    ) -> int:
         """|coro|
 
-        Purges a list of messages that meet the criteria given by the predicate ``check``. If a ``check`` is not provided then all messages are deleted without discrimination.
-
-        You must have :attr:`~Permissions.manage_messages` to delete messages even if they are your own.
-
-        .. versionchanged:: 2.0
-
+        Purges a list of messages in a more efficient manner compared to the standard `purge` method.
+    
+        This method deletes messages without waiting for the Discord API's response for each individual message,
+        which can lead to faster deletion of messages, especially when purging large numbers of messages.
+    
         Parameters
-        -----------
-        limit: Optional[:class:`int`]
-            The number of messages to search through. This is not the number of messages that will be deleted, though it can be.
-        check: Callable[[Message], bool]
-            The function used to check if a message should be deleted. It must take a :class:`Message` as its sole parameter.
-        before: Optional[Union[:class:`abc.Snowflake`, :class:`datetime.datetime`]]
-            Same as ``before`` in :meth:`history`
-        after: Optional[Union[:class:`abc.Snowflake`, :class:`datetime.datetime`]]
-            Same as ``after`` in :meth:`history`
-        around: Optional[Union[:class:`abc.Snowflake`, :class:`datetime.datetime`]]
-            Same as ``around`` in :meth:`history`
-        oldest_first: Optional[:class:`bool`]
-            Same as ``oldest_first`` in :meth:`history`
-        bulk: :class:`bool`
-            If ``True``, use bulk delete. Setting this to ``False`` is useful for mass-deleting a bot's own messages without :attr:`Permissions.manage_messages`. When ``True``, will fall back to single delete if messages are older than two weeks.
-        reason: Optional[:class:`str`]
-            The reason for purging the messages. Shows up on the audit log.
-
-        Raises
-        -------
-        Forbidden
-            You don't have permissions to get the webhooks.
-        HTTPException
-            Purging the messages failed.
-
+        ----------
+        messages: List[Message]
+            The list of messages to be purged.
+        proxy: Optional[str]
+            The proxy to use for the API request.
+        reason: Optional[str]
+            The reason for purging the messages, which will be displayed in the audit log.
+    
         Returns
-        --------
+        -------
         int
             The number of messages that were deleted.
         """
-        from asyncio import Lock, gather
-        from .utils import chunk_list
-        too_old = utcnow() + datetime.timedelta(days=14)
-        messages = [m.id for m in messages if m.created_at if m.created_at.timestamp() > too_old.timestamp()]
-        chunks = chunk_list(messages, 100)
-        lock = Lock()
+        too_old = datetime.datetime.utcnow() - datetime.timedelta(days=14)
+        messages = [m.id for m in messages if m.created_at.replace(tzinfo=None) > too_old]
+        chunks = [messages[i:i+100] for i in range(0, len(messages), 100)]
+        lock = asyncio.Lock()
+
         async def do_purge(messages: List[int]) -> None:
             async with lock:
-                await self._state.http.delete_messages(self.id, messages, proxy, reason)
-            return
-        await gather(*[do_purge(_) for _ in chunks])
-        del chunks
+                await self._state.http.delete_messages(
+                    channel_id=self.id, 
+                    message_ids=messages, 
+                    reason=reason,
+                    proxy=proxy
+                )
+
+        await asyncio.gather(*(do_purge(chunk) for chunk in chunks))
         return len(messages)
 
     async def purge(
