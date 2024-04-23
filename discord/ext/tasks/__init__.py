@@ -46,7 +46,7 @@ import inspect
 from collections.abc import Sequence
 from discord.backoff import ExponentialBackoff
 from discord.utils import MISSING
-
+from discord.globals import get_global
 _log = get_global("logger", logging.getLogger(__name__))
 
 # fmt: off

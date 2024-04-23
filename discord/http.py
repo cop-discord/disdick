@@ -57,7 +57,7 @@ from .file import File
 from .mentions import AllowedMentions
 from . import __version__, utils
 from .utils import MISSING
-
+from .globals import get_global
 _log = get_global("logger", logging.getLogger(__name__))
 
 if TYPE_CHECKING:

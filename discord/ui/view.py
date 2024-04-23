@@ -58,7 +58,7 @@ if TYPE_CHECKING:
     from ..state import ConnectionState
     from .modal import Modal
 
-
+from discord.globals import get_global
 _log = get_global("logger", logging.getLogger(__name__))
 
 

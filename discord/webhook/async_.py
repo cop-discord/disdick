@@ -47,6 +47,7 @@ from ..http import Route, handle_message_parameters, MultipartParameters, HTTPCl
 from ..mixins import Hashable
 from ..channel import TextChannel, ForumChannel, PartialMessageable, ForumTag
 from ..file import File
+from ..globals import get_global
 
 __all__ = (
     'Webhook',

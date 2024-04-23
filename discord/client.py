@@ -75,6 +75,7 @@ from .ui.view import View
 from .stage_instance import StageInstance
 from .threads import Thread
 from .sticker import GuildSticker, StandardSticker, StickerPack, _sticker_factory
+from .globals import get_global
 
 if TYPE_CHECKING:
     from types import TracebackType

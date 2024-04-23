@@ -73,6 +73,7 @@ from .components import *
 from .threads import *
 from .automod import *
 from .pool import *
+from .globals import *
 
 class VersionInfo(NamedTuple):
     major: int

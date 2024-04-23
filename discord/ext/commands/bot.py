@@ -95,7 +95,7 @@ __all__ = (
 
 T = TypeVar('T')
 CFT = TypeVar('CFT', bound='CoroFunc')
-
+from discord.globals import get_global
 _log = get_global("logger", logging.getLogger(__name__))
 
 

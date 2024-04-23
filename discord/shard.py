@@ -43,7 +43,7 @@ from .errors import (
 )
 
 from .enums import Status
-
+from .globals import get_global
 from typing import TYPE_CHECKING, Any, Callable, Tuple, Type, Optional, List, Dict
 
 if TYPE_CHECKING:

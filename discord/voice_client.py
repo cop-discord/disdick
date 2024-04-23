@@ -52,6 +52,7 @@ from .gateway import *
 from .errors import ClientException, ConnectionClosed
 from .player import AudioPlayer, AudioSource
 from .utils import MISSING
+from .globals import get_global
 
 if TYPE_CHECKING:
     from .client import Client

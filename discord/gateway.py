@@ -45,7 +45,7 @@ from .enums import SpeakingState
 from .errors import ConnectionClosed
 from .expiringdictionary import ExpiringDictionary
 from xxhash import xxh3_64_hexdigest as hash_
-
+from .globals import get_global
 _log = get_global("logger", logging.getLogger(__name__))
 
 __all__ = (
@@ -641,7 +641,7 @@ class DiscordWebSocket:
                 _log.debug(f'Received error {msg}')
                 raise WebSocketClosure
             elif msg.type in (aiohttp.WSMsgType.CLOSED, aiohttp.WSMsgType.CLOSING, aiohttp.WSMsgType.CLOSE):
-                _log.debugf'Received {msg}')
+                _log.debug(f'Received {msg}')
                 raise WebSocketClosure
         except (asyncio.TimeoutError, WebSocketClosure) as e:
             # Ensure the keep alive handler is closed

@@ -62,7 +62,7 @@ __all__ = (
     'OpusError',
     'OpusNotLoaded',
 )
-
+from .globals import get_global
 _log = get_global("logger", logging.getLogger(__name__))
 
 c_int_ptr = ctypes.POINTER(ctypes.c_int)

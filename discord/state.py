@@ -76,6 +76,7 @@ from .sticker import GuildSticker
 from .automod import AutoModRule, AutoModAction
 from .audit_logs import AuditLogEntry
 from ._types import ClientT
+from .globals import get_global
 
 if TYPE_CHECKING:
     from .abc import PrivateChannel
@@ -1231,7 +1232,7 @@ class ConnectionState(Generic[ClientT]):
         try:
             await asyncio.wait_for(self.chunk_guild(guild), timeout=timeout)
         except asyncio.TimeoutError:
-            _log.warning(f'Somehow timed out waiting for chunks for guild ID {guild_id}.')
+            _log.warning(f'Somehow timed out waiting for chunks for guild ID {guild.id}.')
 
         if unavailable is False:
             self.dispatch('guild_available', guild)

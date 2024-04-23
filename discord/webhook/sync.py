@@ -47,6 +47,7 @@ from ..http import Route, handle_message_parameters
 from ..channel import PartialMessageable
 
 from .async_ import BaseWebhook, _WebhookState
+from ..globals import get_global
 
 __all__ = (
     'SyncWebhook',

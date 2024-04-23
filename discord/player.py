@@ -36,7 +36,7 @@ import re
 import io
 
 from typing import Any, Callable, Generic, IO, Optional, TYPE_CHECKING, Tuple, TypeVar, Union
-
+from .globals import get_global
 from .enums import SpeakingState
 from .errors import ClientException
 from .opus import Encoder as OpusEncoder
