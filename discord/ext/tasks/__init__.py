@@ -530,7 +530,7 @@ class Loop(Generic[LF]):
 
     async def _error(self, *args: Any) -> None:
         exception: Exception = args[-1]
-        _log.error('Unhandled exception in internal background task %r.', self.coro.__name__, exc_info=exception)
+        _log.error(f'Unhandled exception in internal background task {self.coro.__name__}.', exc_info=exception)
 
     def before_loop(self, coro: FT) -> FT:
         """A decorator that registers a coroutine to be called before the loop starts running.
