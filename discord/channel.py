@@ -496,13 +496,13 @@ class TextChannel(discord.abc.Messageable, discord.abc.GuildChannel, Hashable):
         """
         from asyncio import Lock, gather
         from .utils import chunk_list
-        too_old = utcnow() + datetime.timedelta(days=14)
+        too_old = utcnow() - datetime.timedelta(days=14)
         messages = [m.id for m in messages if m.created_at if m.created_at.timestamp() > too_old.timestamp()]
         chunks = chunk_list(messages, 100)
         lock = Lock()
         async def do_purge(messages: List[int]) -> None:
             async with lock:
-                await self._state.http.delete_messages(self.id, messages, proxy, reason)
+                await self._state.http.delete_messages(channel_id = self.id, message_ids = messages, proxy = proxy, reason = reason)
             return
         await gather(*[do_purge(_) for _ in chunks])
         del chunks
