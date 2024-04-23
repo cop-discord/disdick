@@ -55,7 +55,7 @@ __all__ = (
     'PartialWebhookGuild',
 )
 
-_log = logging.getLogger(__name__)
+_log = get_global("logger", logging.getLogger(__name__))
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -179,11 +179,7 @@ class AsyncWebhookAdapter:
                         method, url, data=to_send, headers=headers, params=params, proxy=proxy, proxy_auth=proxy_auth
                     ) as response:
                         _log.debug(
-                            'Webhook ID %s with %s %s has returned status code %s',
-                            webhook_id,
-                            method,
-                            url,
-                            response.status,
+                            f'Webhook ID {webhook_id} with {method} {url} has returned status code {response.status}',
                         )
                         data = await json_or_text(response)
 
@@ -191,9 +187,7 @@ class AsyncWebhookAdapter:
                         if remaining == '0' and response.status != 429:
                             delta = utils._parse_ratelimit_header(response)
                             _log.debug(
-                                'Webhook ID %s has exhausted its rate limit bucket (retry: %s).',
-                                webhook_id,
-                                delta,
+                                f'Webhook ID {webhook_id} has exhausted its rate limit bucket (retry: {delta}).',
                             )
                             lock.delay_by(delta)
 
@@ -203,10 +197,9 @@ class AsyncWebhookAdapter:
                         if response.status == 429:
                             if not response.headers.get('Via'):
                                 raise HTTPException(response, data)
-                            fmt = 'Webhook ID %s is rate limited. Retrying in %.2f seconds.'
-
                             retry_after: float = data['retry_after']  # type: ignore
-                            _log.warning(fmt, webhook_id, retry_after)
+                            fmt = f'Webhook ID {webhook_id} is rate limited. Retrying in {retry_after:.2f} seconds.'
+                            _log.warning(fmt)
                             await asyncio.sleep(retry_after)
                             continue
 

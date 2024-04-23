@@ -96,7 +96,7 @@ __all__ = (
 T = TypeVar('T')
 CFT = TypeVar('CFT', bound='CoroFunc')
 
-_log = logging.getLogger(__name__)
+_log = get_global("logger", logging.getLogger(__name__))
 
 
 def when_mentioned(bot: _Bot, msg: Message, /) -> List[str]:
@@ -348,7 +348,7 @@ class BotBase(GroupMixin[None]):
         if cog and cog.has_error_handler():
             return
 
-        _log.error('Ignoring exception in command %s', command, exc_info=exception)
+        _log.error(f'Ignoring exception in command {command}', exc_info=exception)
 
     # global check registration
 

@@ -47,7 +47,7 @@ from collections.abc import Sequence
 from discord.backoff import ExponentialBackoff
 from discord.utils import MISSING
 
-_log = logging.getLogger(__name__)
+_log = get_global("logger", logging.getLogger(__name__))
 
 # fmt: off
 __all__ = (
@@ -224,13 +224,9 @@ class Loop(Generic[LF]):
                     while self._is_explicit_time() and self._next_iteration <= self._last_iteration:
                         _log.warn(
                             (
-                                'Clock drift detected for task %s. Woke up at %s but needed to sleep until %s. '
-                                'Sleeping until %s again to correct clock'
-                            ),
-                            self.coro.__qualname__,
-                            discord.utils.utcnow(),
-                            self._next_iteration,
-                            self._next_iteration,
+                                f'Clock drift detected for task {self.coro.__qualname__}. Woke up at {discord.utils.utcnow()} but needed to sleep until {self._next_iteration}. '
+                                f'Sleeping until {self._next_iteration} again to correct clock'
+                            )
                         )
                         await self._try_sleep_until(self._next_iteration)
                         self._next_iteration = self._get_next_sleep_time()

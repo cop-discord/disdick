@@ -63,7 +63,7 @@ __all__ = (
     'OpusNotLoaded',
 )
 
-_log = logging.getLogger(__name__)
+_log = get_global("logger", logging.getLogger(__name__))
 
 c_int_ptr = ctypes.POINTER(ctypes.c_int)
 c_int16_ptr = ctypes.POINTER(ctypes.c_int16)
@@ -122,7 +122,7 @@ signal_ctl: SignalCtl = {
 
 def _err_lt(result: int, func: Callable, args: List) -> int:
     if result < OK:
-        _log.debug('error has happened in %s', func.__name__)
+        _log.debug(f'error has happened in {func.__name__}')
         raise OpusError(result)
     return result
 
@@ -130,7 +130,7 @@ def _err_lt(result: int, func: Callable, args: List) -> int:
 def _err_ne(result: T, func: Callable, args: List) -> T:
     ret = args[-1]._obj
     if ret.value != OK:
-        _log.debug('error has happened in %s', func.__name__)
+        _log.debug(f'error has happened in {func.__name__}')
         raise OpusError(ret.value)
     return result
 
@@ -202,7 +202,7 @@ def libopus_loader(name: str) -> Any:
             if item[3]:
                 func.errcheck = item[3]
         except KeyError:
-            _log.exception("Error assigning check function to %s", func)
+            _log.exception(f"Error assigning check function to {func}")
 
     return lib
 
@@ -291,7 +291,7 @@ class OpusError(DiscordException):
     def __init__(self, code: int):
         self.code: int = code
         msg = _lib.opus_strerror(self.code).decode('utf-8')
-        _log.debug('"%s" has happened', msg)
+        _log.debug(f'"{msg}" has happened')
         super().__init__(msg)
 
 

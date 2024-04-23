@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from .modal import Modal
 
 
-_log = logging.getLogger(__name__)
+_log = get_global("logger", logging.getLogger(__name__))
 
 
 def _walk_all_components(components: List[Component]) -> Iterator[Component]:
@@ -471,7 +471,7 @@ class View:
             try:
                 older = old_state[custom_id]
             except KeyError:
-                _log.debug('View interaction referenced an unknown item custom_id %s. Discarding', custom_id)
+                _log.debug(f'View interaction referenced an unknown item custom_id {custom_id}. Discarding')
                 continue
             else:
                 older._refresh_component(component)
@@ -632,7 +632,7 @@ class ViewStore:
     ) -> None:
         modal = self._modals.get(custom_id)
         if modal is None:
-            _log.debug("Modal interaction referencing unknown custom_id %s. Discarding", custom_id)
+            _log.debug(f"Modal interaction referencing unknown custom_id {custom_id}. Discarding")
             return
 
         modal._dispatch_submit(interaction, components)

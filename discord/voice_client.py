@@ -87,7 +87,7 @@ __all__ = (
 )
 
 
-_log = logging.getLogger(__name__)
+_log = get_global("logger", logging.getLogger(__name__))
 
 
 class VoiceProtocol:
@@ -343,18 +343,18 @@ class VoiceClient(VoiceProtocol):
         await self.channel.guild.change_voice_state(channel=self.channel, self_deaf=self_deaf, self_mute=self_mute)
 
     async def voice_disconnect(self) -> None:
-        _log.info('The voice handshake is being terminated for Channel ID %s (Guild ID %s)', self.channel.id, self.guild.id)
+        _log.info(f'The voice handshake is being terminated for Channel ID {self.channel.id} (Guild ID {self.guild.id})')
         await self.channel.guild.change_voice_state(channel=None)
 
     def prepare_handshake(self) -> None:
         self._voice_state_complete.clear()
         self._voice_server_complete.clear()
         self._handshaking = True
-        _log.info('Starting voice handshake... (connection attempt %d)', self._connections + 1)
+        _log.info(f'Starting voice handshake... (connection attempt {self.connections + 1})')
         self._connections += 1
 
     def finish_handshake(self) -> None:
-        _log.info('Voice handshake complete. Endpoint found %s', self.endpoint)
+        _log.info(f'Voice handshake complete. Endpoint found {self.endpoint}')
         self._handshaking = False
         self._voice_server_complete.clear()
         self._voice_state_complete.clear()
@@ -461,7 +461,7 @@ class VoiceClient(VoiceProtocol):
                     # 4014 - voice channel has been deleted.
                     # 4015 - voice server has crashed
                     if exc.code in (1000, 4015):
-                        _log.info('Disconnecting from voice normally, close code %d.', exc.code)
+                        _log.info(f'Disconnecting from voice normally, close code {exc.code}.')
                         await self.disconnect()
                         break
                     if exc.code == 4014:
@@ -479,7 +479,7 @@ class VoiceClient(VoiceProtocol):
                     raise
 
                 retry = backoff.delay()
-                _log.exception('Disconnected from voice... Reconnecting in %.2fs.', retry)
+                _log.exception(f'Disconnected from voice... Reconnecting in {retry:.2f}s.')
                 self._connected.clear()
                 await asyncio.sleep(retry)
                 await self.voice_disconnect()
@@ -682,6 +682,6 @@ class VoiceClient(VoiceProtocol):
         try:
             self.socket.sendto(packet, (self.endpoint_ip, self.voice_port))
         except BlockingIOError:
-            _log.warning('A packet has been dropped (seq: %s, timestamp: %s)', self.sequence, self.timestamp)
+            _log.warning(f'A packet has been dropped (seq: {self.sequence}, timestamp: {self.timestamp})')
 
         self.checked_add('timestamp', opus.Encoder.SAMPLES_PER_FRAME, 4294967295)

@@ -126,7 +126,7 @@ T = TypeVar('T')
 Coro = Coroutine[Any, Any, T]
 CoroT = TypeVar('CoroT', bound=Callable[..., Coro[Any]])
 
-_log = logging.getLogger(__name__)
+_log = get_global("logger", logging.getLogger(__name__))
 
 
 class _LoopSentinel:
@@ -508,7 +508,7 @@ class Client:
         return self.loop.create_task(wrapped, name=f'discord.py: {event_name}')
 
     def dispatch(self, event: str, /, *args: Any, **kwargs: Any) -> None:
-        _log.debug('Dispatching event %s', event)
+        _log.debug(f'Dispatching event {event}')
         method = 'on_' + event
 
         listeners = self._listeners.get(event)
@@ -561,7 +561,7 @@ class Client:
             ``event_method`` parameter is now positional-only
             and instead of writing to ``sys.stderr`` it logs instead.
         """
-        _log.exception('Ignoring exception in %s', event_method)
+        _log.exception(f'Ignoring exception in {event_method}')
 
     # hooks
 
@@ -709,7 +709,7 @@ class Client:
                 while True:
                     await self.ws.poll_event()
             except ReconnectWebSocket as e:
-                _log.debug('Got a request to %s the websocket.', e.op)
+                _log.debug(f'Got a request to {e.op} the websocket.')
                 self.dispatch('disconnect')
                 ws_params.update(sequence=self.ws.sequence, resume=e.resume, session=self.ws.session_id)
                 if e.resume:
@@ -758,7 +758,7 @@ class Client:
                         raise
 
                 retry = backoff.delay()
-                _log.exception("Attempting a reconnect in %.2fs", retry)
+                _log.exception(f"Attempting a reconnect in {retry:.2f}s")
                 await asyncio.sleep(retry)
                 # Always try to RESUME the connection
                 # If the connection is not RESUME-able then the gateway will invalidate the session.
@@ -2014,7 +2014,7 @@ class Client:
             raise TypeError('event registered must be a coroutine function')
 
         setattr(self, coro.__name__, coro)
-        _log.debug('%s has successfully been registered as an event', coro.__name__)
+        _log.debug(f'{coro.__name__} has successfully been registered as an event')
         return coro
 
     async def change_presence(

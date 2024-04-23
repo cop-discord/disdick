@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
 AT = TypeVar('AT', bound='AudioSource')
 
-_log = logging.getLogger(__name__)
+_log = get_global("logger", logging.getLogger(__name__))
 
 __all__ = (
     'AudioSource',
@@ -191,19 +191,19 @@ class FFmpegAudio(AudioSource):
         if proc is MISSING:
             return
 
-        _log.debug('Preparing to terminate ffmpeg process %s.', proc.pid)
+        _log.debug(f'Preparing to terminate ffmpeg process {proc.pid}.')
 
         try:
             proc.kill()
         except Exception:
-            _log.exception('Ignoring error attempting to kill ffmpeg process %s', proc.pid)
+            _log.exception(f'Ignoring error attempting to kill ffmpeg process {proc.pid}')
 
         if proc.poll() is None:
-            _log.info('ffmpeg process %s has not terminated. Waiting to terminate...', proc.pid)
+            _log.info(f'ffmpeg process {proc.pid} has not terminated. Waiting to terminate...')
             proc.communicate()
-            _log.info('ffmpeg process %s should have terminated with a return code of %s.', proc.pid, proc.returncode)
+            _log.info(f'ffmpeg process {proc.pid} should have terminated with a return code of {proc.returncode}.')
         else:
-            _log.info('ffmpeg process %s successfully terminated with return code of %s.', proc.pid, proc.returncode)
+            _log.info(f'ffmpeg process {proc.pid} successfully terminated with return code of {proc.returncode}.')
 
     def _pipe_writer(self, source: io.BufferedIOBase) -> None:
         while self._process:
@@ -216,7 +216,7 @@ class FFmpegAudio(AudioSource):
                 if self._stdin is not None:
                     self._stdin.write(data)
             except Exception:
-                _log.debug('Write error for %s, this is probably not a problem', self, exc_info=True)
+                _log.debug('Write error for {self}, this is probably not a problem')
                 # at this point the source data is either exhausted or the process is fubar
                 self._process.terminate()
                 return
@@ -526,18 +526,18 @@ class FFmpegOpusAudio(FFmpegAudio):
             codec, bitrate = await loop.run_in_executor(None, lambda: probefunc(source, executable))
         except Exception:
             if not fallback:
-                _log.exception("Probe '%s' using '%s' failed", method, executable)
+                _log.exception(f"Probe '{method}' using '{executable}' failed")
                 return  # type: ignore
 
-            _log.exception("Probe '%s' using '%s' failed, trying fallback", method, executable)
+            _log.exception(f"Probe '{method}' using '{executable}' failed, trying fallback")
             try:
                 codec, bitrate = await loop.run_in_executor(None, lambda: fallback(source, executable))
             except Exception:
-                _log.exception("Fallback probe using '%s' failed", executable)
+                _log.exception(f"Fallback probe using '{executable}' failed")
             else:
-                _log.debug("Fallback probe found codec=%s, bitrate=%s", codec, bitrate)
+                _log.debug(f"Fallback probe found codec={codec}, bitrate={bitrate}")
         else:
-            _log.debug("Probe found codec=%s, bitrate=%s", codec, bitrate)
+            _log.debug(f"Probe found codec={codec}, bitrate={bitrate}")
         finally:
             return codec, bitrate
 
@@ -711,9 +711,9 @@ class AudioPlayer(threading.Thread):
                 self.after(error)
             except Exception as exc:
                 exc.__context__ = error
-                _log.exception('Calling the after function failed.', exc_info=exc)
+                _log.exception(f'Calling the after function failed.', exc_info=exc)
         elif error:
-            _log.exception('Exception in voice thread %s', self.name, exc_info=error)
+            _log.exception(f'Exception in voice thread {self.name}', exc_info=error)
 
     def stop(self) -> None:
         self._end.set()

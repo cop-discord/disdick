@@ -84,6 +84,6 @@ class VersionInfo(NamedTuple):
 
 version_info: VersionInfo = VersionInfo(major=2, minor=3, micro=1, releaselevel='alpha', serial=0)
 
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+get_global("logger", logging.getLogger(__name__)).addHandler(logging.NullHandler())
 
 del logging, NamedTuple, Literal, VersionInfo
