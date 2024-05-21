@@ -172,7 +172,7 @@ class KeepAliveHandler(threading.Thread):
                     return
 
             data = self.get_payload()
-            _log.debug(self.msg % self.shard_id, data['d'])
+            _log.debug(self.msg % (self.shard_id, data['d']))
             coro = self.ws.send_heartbeat(data)
             f = asyncio.run_coroutine_threadsafe(coro, loop=self.ws.loop)
             try:
