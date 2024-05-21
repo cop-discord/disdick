@@ -893,13 +893,10 @@ class BotBase(GroupMixin[None]):
                     for check in checks:
                         if " has_permissions" in str(check):
                             ctx.permissions.value = 0
-
+                            if asyncio.iscoroutinefunction(check): invoke = await check(ctx)
+                            else: invoke = check(ctx)
                             try:
-                                if asyncio.iscoroutinefunction(check):
-                                    invoke = await check(ctx)
-                                else:
-                                    invoke = check(ctx)
-                                command.perms = list(invoke.cr_frame.f_locals['perms'].keys())
+                                command.perms = list(check(ctx).cr_frame.f_locals['perms'].keys())
                             
                             except errors.MissingPermissions as err:
                                 command.perms = err.missing_permissions
@@ -912,13 +909,10 @@ class BotBase(GroupMixin[None]):
 
                         elif " bot_has_permissions" in str(check):
                             ctx.bot_permissions.value = 0
-
+                            if asyncio.iscoroutinefunction(check): invoke = await check(ctx)
+                            else: invoke = check(ctx)
                             try:
-                                if asyncio.iscoroutinefunction(check):
-                                    invoke = await check(ctx)
-                                else:
-                                    invoke = check(ctx)
-                                command.bot_perms = list(invoke.cr_frame.f_locals['perms'].keys())
+                                command.bot_perms = list(check(ctx).cr_frame.f_locals['perms'].keys())
                             
                             except errors.BotMissingPermissions as err:
                                 command.bot_perms = err.missing_permissions
