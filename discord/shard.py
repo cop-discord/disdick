@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import logging
+import loguru
 
 import aiohttp
 import yarl
@@ -56,7 +56,7 @@ __all__ = (
     'ShardInfo',
 )
 
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 
 class EventType:

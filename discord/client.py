@@ -26,7 +26,7 @@ from __future__ import annotations
 from collections import deque
 import asyncio
 import datetime
-import logging
+import loguru
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -127,7 +127,7 @@ T = TypeVar('T')
 Coro = Coroutine[Any, Any, T]
 CoroT = TypeVar('CoroT', bound=Callable[..., Coro[Any]])
 
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 
 class _LoopSentinel:
@@ -199,9 +199,9 @@ class Client:
 
         .. versionadded:: 1.5
     status: Optional[:class:`.Status`]
-        A status to start your presence with upon logging on to Discord.
+        A status to start your presence with upon loguru on to Discord.
     activity: Optional[:class:`.BaseActivity`]
-        An activity to start your presence with upon logging on to Discord.
+        An activity to start your presence with upon loguru on to Discord.
     allowed_mentions: Optional[:class:`AllowedMentions`]
         Control how the client handles mentions by default on every message sent.
 
@@ -650,7 +650,7 @@ class Client:
             passing status code.
         """
 
-        _log.info('logging in using static token')
+        _log.info('loguru in using static token')
 
         if self.loop is _loop:
             await self._async_setup_hook()
@@ -834,8 +834,8 @@ class Client:
         token: str,
         *,
         reconnect: bool = True,
-        log_handler: Optional[logging.Handler] = MISSING,
-        log_formatter: logging.Formatter = MISSING,
+        log_handler: Optional[loguru.Handler] = MISSING,
+        log_formatter: loguru.Formatter = MISSING,
         log_level: int = MISSING,
         root_logger: bool = False,
     ) -> None:
@@ -846,7 +846,7 @@ class Client:
         function should not be used. Use :meth:`start` coroutine
         or :meth:`connect` + :meth:`login`.
 
-        This function also sets up the logging library to make it easier
+        This function also sets up the loguru library to make it easier
         for beginners to know what is going on with the library. For more
         advanced users, this can be disabled by passing ``None`` to
         the ``log_handler`` parameter.
@@ -867,23 +867,23 @@ class Client:
             failure or a specific failure on Discord's part. Certain
             disconnects that lead to bad state will not be handled (such as
             invalid sharding payloads or bad tokens).
-        log_handler: Optional[:class:`logging.Handler`]
+        log_handler: Optional[:class:`loguru.Handler`]
             The log handler to use for the library's logger. If this is ``None``
-            then the library will not set up anything logging related. Logging
+            then the library will not set up anything loguru related. loguru
             will still work if ``None`` is passed, though it is your responsibility
             to set it up.
 
-            The default log handler if not provided is :class:`logging.StreamHandler`.
+            The default log handler if not provided is :class:`loguru.StreamHandler`.
 
             .. versionadded:: 2.0
-        log_formatter: :class:`logging.Formatter`
+        log_formatter: :class:`loguru.Formatter`
             The formatter to use with the given log handler. If not provided then it
-            defaults to a colour based logging formatter (if available).
+            defaults to a colour based loguru formatter (if available).
 
             .. versionadded:: 2.0
         log_level: :class:`int`
             The default log level for the library's logger. This is only applied if the
-            ``log_handler`` parameter is not ``None``. Defaults to ``logging.INFO``.
+            ``log_handler`` parameter is not ``None``. Defaults to ``loguru.INFO``.
 
             .. versionadded:: 2.0
         root_logger: :class:`bool`
@@ -901,7 +901,7 @@ class Client:
                 await self.start(token, reconnect=reconnect)
 
         if log_handler is not None:
-            utils.setup_logging(
+            utils.setup_loguru(
                 handler=log_handler,
                 formatter=log_formatter,
                 level=log_level,
@@ -925,7 +925,7 @@ class Client:
     @property
     def activity(self) -> Optional[ActivityTypes]:
         """Optional[:class:`.BaseActivity`]: The activity being used upon
-        logging in.
+        loguru in.
         """
         return create_activity(self._connection._activity, self._connection)
 
@@ -942,7 +942,7 @@ class Client:
     @property
     def status(self) -> Status:
         """:class:`.Status`:
-        The status being used upon logging on to Discord.
+        The status being used upon loguru on to Discord.
 
         .. versionadded: 2.0
         """

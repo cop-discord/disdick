@@ -41,7 +41,7 @@ from __future__ import annotations
 
 import asyncio
 import socket
-import logging
+import loguru
 import struct
 import threading
 from typing import Any, Callable, List, Optional, TYPE_CHECKING, Tuple, Union
@@ -88,7 +88,7 @@ __all__ = (
 )
 
 
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 
 class VoiceProtocol:

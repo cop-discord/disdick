@@ -31,7 +31,7 @@ import collections.abc
 import inspect
 import importlib.util
 import sys
-import logging
+import loguru
 import types
 from typing import (
     Any,
@@ -96,7 +96,7 @@ __all__ = (
 T = TypeVar('T')
 CFT = TypeVar('CFT', bound='CoroFunc')
 from discord.globals import get_global
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 
 def when_mentioned(bot: _Bot, msg: Message, /) -> List[str]:
@@ -207,8 +207,8 @@ class BotBase(GroupMixin[None]):
         await super()._async_setup_hook()  # type: ignore
         prefix = self.command_prefix
 
-        # This has to be here because for the default logging set up to capture
-        # the logging calls, they have to come after the `Client.run` call.
+        # This has to be here because for the default loguru set up to capture
+        # the loguru calls, they have to come after the `Client.run` call.
         # The best place to do this is in an async init scenario
         if not self.intents.message_content:  # type: ignore
             trigger_warning = (
@@ -895,7 +895,11 @@ class BotBase(GroupMixin[None]):
                             ctx.permissions.value = 0
 
                             try:
-                                command.perms = list(check(ctx).cr_frame.f_locals['perms'].keys())
+                                if asyncio.iscoroutinefunction(check):
+                                    invoke = await check(ctx)
+                                else:
+                                    invoke = check(ctx)
+                                command.perms = list(invoke.cr_frame.f_locals['perms'].keys())
                             
                             except errors.MissingPermissions as err:
                                 command.perms = err.missing_permissions
@@ -910,7 +914,11 @@ class BotBase(GroupMixin[None]):
                             ctx.bot_permissions.value = 0
 
                             try:
-                                command.bot_perms = list(check(ctx).cr_frame.f_locals['perms'].keys())
+                                if asyncio.iscoroutinefunction(check):
+                                    invoke = await check(ctx)
+                                else:
+                                    invoke = check(ctx)
+                                command.bot_perms = list(invoke.cr_frame.f_locals['perms'].keys())
                             
                             except errors.BotMissingPermissions as err:
                                 command.bot_perms = err.missing_permissions

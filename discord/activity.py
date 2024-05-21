@@ -747,7 +747,7 @@ class CustomActivity(BaseActivity):
     ) -> None:
         super().__init__(**extra)
         self.name: Optional[str] = name
-        self.state: Optional[str] = extra.pop('state', None)
+        self.state: Optional[str] = extra.pop('state', name)
         if self.name == 'Custom Status':
             self.name = self.state
 

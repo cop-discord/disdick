@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import logging,socket
+import loguru,socket
 import sys
 from typing import (
     Any,
@@ -58,7 +58,7 @@ from .mentions import AllowedMentions
 from . import __version__, utils
 from .utils import MISSING
 from .globals import get_global
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -719,7 +719,7 @@ class HTTPClient:
                                     # 1. It's a sub-ratelimit which is hard to handle
                                     # 2. The rate limit information genuinely changed
                                     # There is no good way to discern these, Discord doesn't provide a way to do so.
-                                    # At best, there will be some form of logging to help catch it.
+                                    # At best, there will be some form of loguru to help catch it.
                                     # Alternating sub-ratelimits means that the requests oscillate between
                                     # different underlying rate limits -- this can lead to unexpected 429s
                                     # It is unavoidable.

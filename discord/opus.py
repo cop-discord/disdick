@@ -29,7 +29,7 @@ from typing import List, Tuple, TypedDict, Any, TYPE_CHECKING, Callable, TypeVar
 import array
 import ctypes
 import ctypes.util
-import logging
+import loguru
 import math
 import os.path
 import struct
@@ -63,7 +63,7 @@ __all__ = (
     'OpusNotLoaded',
 )
 from .globals import get_global
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 c_int_ptr = ctypes.POINTER(ctypes.c_int)
 c_int16_ptr = ctypes.POINTER(ctypes.c_int16)

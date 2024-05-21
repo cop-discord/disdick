@@ -27,7 +27,7 @@ import threading
 import subprocess
 import audioop
 import asyncio
-import logging
+import loguru
 import shlex
 import time
 import orjson
@@ -51,7 +51,7 @@ if TYPE_CHECKING:
 
 AT = TypeVar('AT', bound='AudioSource')
 
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 __all__ = (
     'AudioSource',

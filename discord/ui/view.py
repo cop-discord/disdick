@@ -28,7 +28,7 @@ from functools import partial
 from itertools import groupby
 
 import asyncio
-import logging
+import loguru
 import sys
 import time
 import os
@@ -59,7 +59,7 @@ if TYPE_CHECKING:
     from .modal import Modal
 
 from discord.globals import get_global
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 
 def _walk_all_components(components: List[Component]) -> Iterator[Component]:

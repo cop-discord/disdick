@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from __future__ import annotations
-import logging
+import loguru
 import inspect
 
 from typing import (
@@ -79,7 +79,7 @@ if TYPE_CHECKING:
 
 __all__ = ('CommandTree',)
 
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 
 def _retrieve_guild_ids(

@@ -27,7 +27,7 @@ from __future__ import annotations
 import asyncio
 from collections import deque, OrderedDict
 import copy
-import logging
+import loguru
 from typing import (
     Dict,
     Optional,
@@ -153,10 +153,10 @@ class ChunkRequest:
                 future.set_result(self.buffer)
 
 
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 
-async def logging_coroutine(coroutine: Coroutine[Any, Any, T], *, info: str) -> Optional[T]:
+async def loguru_coroutine(coroutine: Coroutine[Any, Any, T], *, info: str) -> Optional[T]:
     try:
         await coroutine
     except Exception:
@@ -1306,7 +1306,7 @@ class ConnectionState(Generic[ClientT]):
         # before GUILD_MEMBER_REMOVE is called
         # hence we don't remove it from cache or do anything
         # strange with it, the main purpose of this event
-        # is mainly to dispatch to another event worth listening to for logging
+        # is mainly to dispatch to another event worth listening to for loguru
         guild = self._get_guild(int(data['guild_id']))
         if guild is not None:
             try:
@@ -1551,7 +1551,7 @@ class ConnectionState(Generic[ClientT]):
                 voice = self._get_voice_client(guild.id)
                 if voice is not None:
                     coro = voice.on_voice_state_update(data)
-                    asyncio.create_task(logging_coroutine(coro, info='Voice Protocol voice state update handler'))
+                    asyncio.create_task(loguru_coroutine(coro, info='Voice Protocol voice state update handler'))
 
             member, before, after = guild._update_voice_state(data, channel_id)  # type: ignore
             if member is not None:
@@ -1572,7 +1572,7 @@ class ConnectionState(Generic[ClientT]):
         vc = self._get_voice_client(key_id)
         if vc is not None:
             coro = vc.on_voice_server_update(data)
-            asyncio.create_task(logging_coroutine(coro, info='Voice Protocol voice server update handler'))
+            asyncio.create_task(loguru_coroutine(coro, info='Voice Protocol voice server update handler'))
 
     def parse_typing_start(self, data: gw.TypingStartEvent) -> None:
         raw = RawTypingEvent(data)

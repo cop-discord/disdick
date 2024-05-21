@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-import logging
+import loguru
 import asyncio
 import re
 
@@ -56,7 +56,7 @@ __all__ = (
     'PartialWebhookGuild',
 )
 
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 if TYPE_CHECKING:
     from typing_extensions import Self

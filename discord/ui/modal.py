@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import logging
+import loguru
 import os
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, ClassVar, List
@@ -49,7 +49,7 @@ __all__ = (
 # fmt: on
 from discord.globals import get_global
 
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 
 class Modal(View):

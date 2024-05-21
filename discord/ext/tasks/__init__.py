@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
-import logging
+import loguru
 from typing import (
     Any,
     Callable,
@@ -47,7 +47,7 @@ from collections.abc import Sequence
 from discord.backoff import ExponentialBackoff
 from discord.utils import MISSING
 from discord.globals import get_global
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 # fmt: off
 __all__ = (

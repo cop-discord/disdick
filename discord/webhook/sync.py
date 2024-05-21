@@ -31,7 +31,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import threading
-import logging
+import loguru
 import orjson
 import time
 import re
@@ -54,7 +54,7 @@ __all__ = (
     'SyncWebhookMessage',
 )
 
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 if TYPE_CHECKING:
     from typing_extensions import Self

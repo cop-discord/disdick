@@ -26,7 +26,7 @@ from __future__ import annotations
 import asyncio
 from collections import deque
 import concurrent.futures
-import logging
+import loguru
 import struct
 import sys
 import time
@@ -46,7 +46,7 @@ from .errors import ConnectionClosed
 from .expiringdictionary import ExpiringDictionary
 from xxhash import xxh3_64_hexdigest as hash_
 from .globals import get_global
-_log = get_global("logger", logging.getLogger(__name__))
+_log = get_global("logger", loguru.logger)
 
 __all__ = (
     'DiscordWebSocket',

@@ -71,7 +71,7 @@ import os
 import sys
 import types
 import warnings
-import logging
+import logging as loguru
 
 import yarl
 
@@ -101,7 +101,7 @@ __all__ = (
     'as_chunks',
     'format_dt',
     'MISSING',
-    'setup_logging',
+    'setup_loguru',
 )
 
 DISCORD_EPOCH = 1420070400000
@@ -1386,7 +1386,7 @@ def stream_supports_colour(stream: Any) -> bool:
     return is_a_tty and ('ANSICON' in os.environ or 'WT_SESSION' in os.environ)
 
 
-class _ColourFormatter(logging.Formatter):
+class _ColourFormatter(loguru.Formatter):
 
     # ANSI codes are a bit weird to decipher if you're unfamiliar with them, so here's a refresher
     # It starts off with a format like \x1b[XXXm where XXX is a semicolon separated list of commands
@@ -1398,15 +1398,15 @@ class _ColourFormatter(logging.Formatter):
     # 1 means bold, 2 means dim, 0 means reset, and 4 means underline.
 
     LEVEL_COLOURS = [
-        (logging.DEBUG, '\x1b[40;1m'),
-        (logging.INFO, '\x1b[34;1m'),
-        (logging.WARNING, '\x1b[33;1m'),
-        (logging.ERROR, '\x1b[31m'),
-        (logging.CRITICAL, '\x1b[41m'),
+        (loguru.DEBUG, '\x1b[40;1m'),
+        (loguru.INFO, '\x1b[34;1m'),
+        (loguru.WARNING, '\x1b[33;1m'),
+        (loguru.ERROR, '\x1b[31m'),
+        (loguru.CRITICAL, '\x1b[41m'),
     ]
 
     FORMATS = {
-        level: logging.Formatter(
+        level: loguru.Formatter(
             f'\x1b[30;1m%(asctime)s\x1b[0m {colour}%(levelname)-8s\x1b[0m \x1b[35m%(name)s\x1b[0m %(message)s',
             '%Y-%m-%d %H:%M:%S',
         )
@@ -1416,7 +1416,7 @@ class _ColourFormatter(logging.Formatter):
     def format(self, record):
         formatter = self.FORMATS.get(record.levelno)
         if formatter is None:
-            formatter = self.FORMATS[logging.DEBUG]
+            formatter = self.FORMATS[loguru.DEBUG]
 
         # Override the traceback to always print in red
         if record.exc_info:
@@ -1430,59 +1430,59 @@ class _ColourFormatter(logging.Formatter):
         return output
 
 
-def setup_logging(
+def setup_loguru(
     *,
-    handler: logging.Handler = MISSING,
-    formatter: logging.Formatter = MISSING,
+    handler: loguru.Handler = MISSING,
+    formatter: loguru.Formatter = MISSING,
     level: int = MISSING,
     root: bool = True,
 ) -> None:
-    """A helper function to setup logging.
+    """A helper function to setup loguru.
 
-    This is superficially similar to :func:`logging.basicConfig` but
+    This is superficially similar to :func:`loguru.basicConfig` but
     uses different defaults and a colour formatter if the stream can
     display colour.
 
-    This is used by the :class:`~discord.Client` to set up logging
+    This is used by the :class:`~discord.Client` to set up loguru
     if ``log_handler`` is not ``None``.
 
     .. versionadded:: 2.0
 
     Parameters
     -----------
-    handler: :class:`logging.Handler`
+    handler: :class:`loguru.Handler`
         The log handler to use for the library's logger.
 
-        The default log handler if not provided is :class:`logging.StreamHandler`.
-    formatter: :class:`logging.Formatter`
+        The default log handler if not provided is :class:`loguru.StreamHandler`.
+    formatter: :class:`loguru.Formatter`
         The formatter to use with the given log handler. If not provided then it
-        defaults to a colour based logging formatter (if available). If colour
-        is not available then a simple logging formatter is provided.
+        defaults to a colour based loguru formatter (if available). If colour
+        is not available then a simple loguru formatter is provided.
     level: :class:`int`
-        The default log level for the library's logger. Defaults to ``logging.INFO``.
+        The default log level for the library's logger. Defaults to ``loguru.INFO``.
     root: :class:`bool`
         Whether to set up the root logger rather than the library logger.
         Unlike the default for :class:`~discord.Client`, this defaults to ``True``.
     """
 
     if level is MISSING:
-        level = logging.INFO
+        level = loguru.INFO
 
     if handler is MISSING:
-        handler = logging.StreamHandler()
+        handler = loguru.StreamHandler()
 
     if formatter is MISSING:
-        if isinstance(handler, logging.StreamHandler) and stream_supports_colour(handler.stream):
+        if isinstance(handler, loguru.StreamHandler) and stream_supports_colour(handler.stream):
             formatter = _ColourFormatter()
         else:
             dt_fmt = '%Y-%m-%d %H:%M:%S'
-            formatter = logging.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
+            formatter = loguru.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
 
     if root:
-        logger = logging.getLogger()
+        logger = loguru.getLogger()
     else:
         library, _, _ = __name__.partition('.')
-        logger = logging.getLogger(library)
+        logger = loguru.getLogger(library)
 
     handler.setFormatter(formatter)
     logger.setLevel(level)
