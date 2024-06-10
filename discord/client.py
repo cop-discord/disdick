@@ -650,7 +650,7 @@ class Client:
             passing status code.
         """
 
-        _log.info('loguru in using static token')
+        _log.info('logging in using static token')
 
         if self.loop is _loop:
             await self._async_setup_hook()
