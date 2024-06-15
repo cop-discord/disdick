@@ -4,7 +4,6 @@ orjson
 typing_extensions
 psutil
 durations_nlp
-rust_requests
 fast_string_match
 
 [docs]

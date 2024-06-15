@@ -80,7 +80,7 @@ setup(
     long_description=readme,
     long_description_content_type='text/x-rst',
     include_package_data=True,
-    install_requires=['aiohttp','aiodns','orjson','typing_extensions','psutil','durations_nlp','rust_requests','fast_string_match'],
+    install_requires=['aiohttp','aiodns','orjson','typing_extensions','psutil','durations_nlp','fast_string_match'],
     extras_require=extras_require,
     download_url='https://github.com/cop-discord/disdick/archive/refs/tags/2.4.1.tar.gz',
     python_requires='>=3.8.0',

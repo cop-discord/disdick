@@ -589,8 +589,12 @@ class HTTPClient:
             self._try_clear_expired_ratelimits()
         return value
 
+    async def change_connector(self, local_addr: tuple):
+        self.__session._connector = aiohttp.TCPConnector(local_addr = local_addr, family = socket.AF_INET)
+
     async def change_back(self):
         self.__session._connector = self.connector
+        
 
     async def request(
         self,
@@ -854,12 +858,9 @@ class HTTPClient:
                     if local_addr is not None: 
                         await self.change_back()
                     raise DiscordServerError(response, data)
-                if local_addr is not None: 
-                    await self.change_back()
+
                 raise HTTPException(response, data)
 
-            if local_addr is not None: 
-                await self.change_back()
             raise RuntimeError('Unreachable code in HTTP handling')
 
     async def get_from_cdn(self, url: str) -> bytes:
