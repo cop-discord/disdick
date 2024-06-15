@@ -589,6 +589,13 @@ class HTTPClient:
             self._try_clear_expired_ratelimits()
         return value
 
+    async def change_connector(self, local_addr: tuple):
+        self.__session._connector = aiohttp.TCPConnector(local_addr = local_addr, family = socket.AF_INET)
+
+    async def change_back(self):
+        self.__session._connector = self.connector
+        
+
     async def request(
         self,
         route: Route,
@@ -646,7 +653,7 @@ class HTTPClient:
             'User-Agent': self.user_agent,
         }
         if local_addr is not None:
-            self.connector.local_addr=local_addr
+            self.__session._connector = aiohttp.TCPConnector(local_addr = local_addr, family = socket.AF_INET)
         if token is not None:
             headers['Authorization'] = token
         else:
@@ -702,8 +709,6 @@ class HTTPClient:
 
                         # even errors have text involved in them so this is safe to call
                         data = await json_or_text(response)
-                        if local_addr != None:
-                            if self.local_addr != None: self.connector.local_addr=self.local_addr
                         # Update and use rate limit information if the bucket header is present
                         discord_hash = response.headers.get('X-Ratelimit-Bucket')
                         # I am unsure if X-Ratelimit-Bucket is always available
@@ -747,12 +752,16 @@ class HTTPClient:
                         # the request was successful so just return the text/json
                         if 300 > response.status >= 200:
                             _log.debug(f'{method} {url} has received {data}')
+                            if local_addr is not None: 
+                                await self.change_back()
                             return data
 
                         # we are being rate limited
                         if response.status == 429:
                             if not response.headers.get('Via') or isinstance(data, str):
                                 # Banned by Cloudflare more than likely.
+                                if local_addr is not None: 
+                                    await self.change_back()
                                 raise HTTPException(response, data)
 
                             if ratelimit.remaining > 0:
@@ -770,6 +779,8 @@ class HTTPClient:
                                 _log.warning(
                                     f'We are being rate limited. {method} {url} responded with 429. Timeout of {retry_after:.2f} was too long, erroring instead.',
                                 )
+                                if local_addr is not None: 
+                                    await self.change_back()
                                 raise RateLimited(retry_after)
 
                             fmt = f'We are being rate limited. {method} {url} responded with 429. Retrying in {retry_after:.2f} seconds.'
@@ -806,12 +817,17 @@ class HTTPClient:
                         if self.anti_cloudflare_ban == True:
                             if self.redis != None:
                                 d=await self.redis.ratelimited('invalidss',9950,6000,1)
-                                if d == True: raise InvalidRatelimit(int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
+                                if d == True:
+                                    if local_addr is not None: 
+                                        await self.change_back()
+                                    raise InvalidRatelimit(int(await self.redis.ttl(self.redis.rl_keys['invalidss'])))
                             else:
                                 d=await self.invalid_ratelimiter.ratelimit("invalids",self.invalid_limit,600)
                                 if d == True:
                                     v=self.invalid_ratelimiter
                                     time_remaining=(v.delete['invalids']['last']+v.delete['invalids']['bucket'])-int(datetime.datetime.now().timestamp())
+                                    if local_addr is not None: 
+                                        await self.change_back()
                                     raise InvalidRatelimit(time_remaining)
                         if response.status == 403:
                             raise Forbidden(response, data)
@@ -832,11 +848,13 @@ class HTTPClient:
 
                 finally:
                     if local_addr is not None:
-                        self.connector.local_addr=self.local_addr
+                        await self.change_back()
 
             if response is not None:
                 # We've run out of retries, raise.
                 if response.status >= 500:
+                    if local_addr is not None: 
+                        await self.change_back()
                     raise DiscordServerError(response, data)
 
                 raise HTTPException(response, data)
