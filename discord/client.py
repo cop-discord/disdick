@@ -56,6 +56,7 @@ from .guild import Guild
 from .emoji import Emoji
 from .channel import _threaded_channel_factory, PartialMessageable
 from .enums import ChannelType,AuditLogAction
+from .ui.dynamic import DynamicItem
 from .mentions import AllowedMentions
 from .errors import *
 from .enums import Status
@@ -81,7 +82,7 @@ if TYPE_CHECKING:
     from types import TracebackType
 
     from typing_extensions import Self
-
+    from .ui.item import Item
     from .abc import Messageable, PrivateChannel, Snowflake, SnowflakeTime
     from .app_commands import Command, ContextMenu
     from .automod import AutoModAction, AutoModRule
@@ -2754,6 +2755,26 @@ class Client:
             raise ValueError('View is already finished.')
 
         self._connection.store_view(view, message_id)
+
+    def add_dynamic_items(self, *items: Type[DynamicItem[Item[Any]]]) -> None:
+        r"""Registers a :class:`~discord.ui.DynamicItem` class for persistent listening.
+        This method accepts *class types* rather than instances.
+        .. versionadded:: 2.4
+        Parameters
+        -----------
+        \*items: Type[:class:`~discord.ui.DynamicItem`]
+            The classes of dynamic items to add.
+        Raises
+        -------
+        TypeError
+            The class is not a subclass of :class:`~discord.ui.DynamicItem`.
+        """
+
+        for item in items:
+            if not issubclass(item, DynamicItem):
+                raise TypeError(f'expected subclass of DynamicItem not {item.__name__}')
+
+        self._connection.store_dynamic_items(*items)    
 
     @property
     def persistent_views(self) -> Sequence[View]:

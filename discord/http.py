@@ -1259,6 +1259,7 @@ class HTTPClient:
         guild_id: Snowflake,
         user_id: Snowflake,
         proxy: Optional[str] = None,
+        local_addr: Optional[tuple] = None,
         *,
         reason: Optional[str] = None,
         **fields: Any,
@@ -1266,6 +1267,8 @@ class HTTPClient:
         r = Route('PATCH', '/guilds/{guild_id}/members/{user_id}', guild_id=guild_id, user_id=user_id)
         if proxy:
             return self.request(r, json=fields, reason=reason, proxy=proxy)
+        if local_addr:
+            return self.request(r, json=fields, reason=reason, local_addr = local_addr)
         return self.request(r, json=fields, reason=reason)
 
     # Channel management
@@ -2005,7 +2008,7 @@ class HTTPClient:
         return self.request(r, json=positions, reason=reason)
 
     def add_role(
-        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, proxy: Optional[str] = None, *, reason: Optional[str] = None
+        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, proxy: Optional[str] = None, local_addr: Optional[tuple] = None, *, reason: Optional[str] = None
     ) -> Response[None]:
         r = Route(
             'PUT',
@@ -2016,11 +2019,13 @@ class HTTPClient:
         )
         if proxy:
             return self.request(r, reason=reason, proxy=proxy)
+        elif local_addr:
+            return self.request(r, reason=reason, local_addr=local_addr)
         else:
             return self.request(r, reason=reason)
 
     def remove_role(
-        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, proxy: Optional[str] = None, *, reason: Optional[str] = None
+        self, guild_id: Snowflake, user_id: Snowflake, role_id: Snowflake, proxy: Optional[str] = None, local_addr: Optional[tuple] = None, *, reason: Optional[str] = None
     ) -> Response[None]:
         r = Route(
             'DELETE',
@@ -2031,6 +2036,8 @@ class HTTPClient:
         )
         if proxy:
             return self.request(r, reason=reason, proxy=proxy)
+        elif local_addr:
+            return self.request(r, reason=reason, local_addr=local_addr)
         else:
             return self.request(r, reason=reason)
         

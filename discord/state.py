@@ -40,6 +40,7 @@ from typing import (
     Coroutine,
     Sequence,
     Generic,
+    Type,
     Tuple,
     Deque,
     Literal,
@@ -86,6 +87,8 @@ if TYPE_CHECKING:
     from .voice_client import VoiceProtocol
     from .gateway import DiscordWebSocket
     from .app_commands import CommandTree, Translator
+    from .ui.item import Item
+    from .ui.dynamic import DynamicItem
 
     from .types.automod import AutoModerationRule, AutoModerationActionExecution
     from .types.snowflake import Snowflake
@@ -406,6 +409,9 @@ class ConnectionState(Generic[ClientT]):
         if interaction_id is not None:
             self._view_store.remove_interaction_mapping(interaction_id)
         self._view_store.add_view(view, message_id)
+
+    def store_dynamic_items(self, *items: Type[DynamicItem[Item[Any]]]) -> None:
+        self._view_store.add_dynamic_items(*items)
 
     def prevent_view_updates_for(self, message_id: int) -> Optional[View]:
         return self._view_store.remove_message_tracking(message_id)
