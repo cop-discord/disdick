@@ -80,19 +80,6 @@ from .globals import get_global
 
 if TYPE_CHECKING:
     from types import TracebackType
-
-    from typing_extensions import Self
-    from .ui.item import Item
-    from .abc import Messageable, PrivateChannel, Snowflake, SnowflakeTime
-    from .app_commands import Command, ContextMenu
-    from .automod import AutoModAction, AutoModRule
-    from .channel import DMChannel, GroupChannel
-    from .ext.commands import AutoShardedBot, Bot, Context, CommandError
-    from .guild import GuildChannel
-    from .integrations import Integration
-    from .interactions import Interaction
-    from .member import Member, VoiceState
-    from .message import Message
     from .raw_models import (
         RawAppCommandPermissionsUpdateEvent,
         RawBulkMessageDeleteEvent,
@@ -107,7 +94,21 @@ if TYPE_CHECKING:
         RawThreadMembersUpdate,
         RawThreadUpdateEvent,
         RawTypingEvent,
+        RawPollVoteActionEvent,
     )
+    from .poll import PollAnswer
+    from typing_extensions import Self
+    from .ui.item import Item
+    from .abc import Messageable, PrivateChannel, Snowflake, SnowflakeTime
+    from .app_commands import Command, ContextMenu
+    from .automod import AutoModAction, AutoModRule
+    from .channel import DMChannel, GroupChannel
+    from .ext.commands import AutoShardedBot, Bot, Context, CommandError
+    from .guild import GuildChannel
+    from .integrations import Integration
+    from .interactions import Interaction
+    from .member import Member, VoiceState
+    from .message import Message
     from .reaction import Reaction
     from .role import Role
     from .scheduled_event import ScheduledEvent
