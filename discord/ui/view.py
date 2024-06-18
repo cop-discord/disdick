@@ -421,8 +421,10 @@ class View:
     async def _scheduled_task(self, item: Item, interaction: Interaction):
         try:
             item._refresh_state(interaction, interaction.data)  # type: ignore
-
-            allow = await item.interaction_check(interaction) and await self.interaction_check(interaction)
+            try:
+                allow = await item.interaction_check(interaction) and await self.interaction_check(interaction)
+            except:
+                allow = await self.interaction_check(interaction)
             if not allow:
                 return
 
