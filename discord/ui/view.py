@@ -413,7 +413,7 @@ class View:
         item: :class:`Item`
             The item that failed the dispatch.
         """
-        _log.error('Ignoring exception in view %r for item %r', self, item, exc_info=error)
+        _log.error('Ignoring exception in view {} for item {}', self, item, exc_info=error)
 
     async def _scheduled_task(self, item: Item, interaction: Interaction):
         try:
