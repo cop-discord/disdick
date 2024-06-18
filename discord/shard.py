@@ -471,6 +471,7 @@ class AutoShardedClient(Client):
             elif item.type == EventType.reconnect:
                 await item.shard.reconnect()
             elif item.type == EventType.terminate:
+                _log.info(f"{item}")
                 await self.close()
                 raise item.error
             elif item.type == EventType.clean_close:
