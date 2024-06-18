@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import loguru
+import logging
 
 import aiohttp
 import yarl
@@ -43,7 +43,7 @@ from .errors import (
 )
 
 from .enums import Status
-from .globals import get_global
+
 from typing import TYPE_CHECKING, Any, Callable, Tuple, Type, Optional, List, Dict
 
 if TYPE_CHECKING:
@@ -56,7 +56,7 @@ __all__ = (
     'ShardInfo',
 )
 
-_log = get_global("logger", loguru.logger)
+_log = logging.getLogger(__name__)
 
 
 class EventType:
@@ -154,7 +154,7 @@ class Shard:
                 return
 
         retry = self._backoff.delay()
-        _log.error(f'Attempting a reconnect for shard ID {self.id} in {retry:.2f}', exc_info=e)
+        _log.error('Attempting a reconnect for shard ID %s in %.2fs', self.id, retry, exc_info=e)
         await asyncio.sleep(retry)
         self._queue_put(EventItem(EventType.reconnect, self, e))
 
@@ -179,7 +179,7 @@ class Shard:
         self._cancel_task()
         self._dispatch('disconnect')
         self._dispatch('shard_disconnect', self.id)
-        _log.debug(f'Got a request to {exc.op} the websocket at Shard ID {self.id}.')
+        _log.debug('Got a request to %s the websocket at Shard ID %s.', exc.op, self.id)
         try:
             coro = DiscordWebSocket.from_client(
                 self._client,
@@ -193,7 +193,7 @@ class Shard:
         except self._handled_exceptions as e:
             await self._handle_disconnect(e)
         except ReconnectWebSocket as e:
-            _log.debug(f'Somehow got a signal to {e.op} while trying to {exc.op} shard ID {self.id}.')
+            _log.debug('Somehow got a signal to %s while trying to %s shard ID %s.', e.op, exc.op, self.id)
             op = EventType.resume if e.resume else EventType.identify
             self._queue_put(EventItem(op, self, e))
         except asyncio.CancelledError:
@@ -292,14 +292,6 @@ class ShardInfo:
         """
         return self._parent.ws.is_ratelimited()
 
-#class ClusterClient(Client):
-#    """A Client just like AutoSharded But with a kwarg for cluster_name for work with the IPC"""
-#    if TYPE_CHECKING:
-#        _connection:AutoShardedConnectionState
-
-#	def __init__(self, *args: Any, intents: Intents, **kwargs: Any) -> None:
-        
-
 
 class AutoShardedClient(Client):
     """A client similar to :class:`Client` except it handles the complications
@@ -334,6 +326,11 @@ class AutoShardedClient(Client):
     ------------
     shard_ids: Optional[List[:class:`int`]]
         An optional list of shard_ids to launch the shards with.
+    shard_connect_timeout: Optional[:class:`float`]
+        The maximum number of seconds to wait before timing out when launching a shard.
+        Defaults to 180 seconds.
+
+        .. versionadded:: 2.4
     """
 
     if TYPE_CHECKING:
@@ -343,6 +340,7 @@ class AutoShardedClient(Client):
         kwargs.pop('shard_id', None)
         self.shard_ids: Optional[List[int]] = kwargs.pop('shard_ids', None)
         self.shard_connect_timeout: Optional[float] = kwargs.pop('shard_connect_timeout', 180.0)
+
         super().__init__(*args, intents=intents, **kwargs)
 
         if self.shard_ids is not None:
@@ -422,7 +420,7 @@ class AutoShardedClient(Client):
             coro = DiscordWebSocket.from_client(self, initial=initial, gateway=gateway, shard_id=shard_id)
             ws = await asyncio.wait_for(coro, timeout=self.shard_connect_timeout)
         except Exception:
-            _log.exception(f'Failed to connect for shard_id: {shard_id}. Retrying...')
+            _log.exception('Failed to connect for shard_id: %s. Retrying...', shard_id)
             await asyncio.sleep(5.0)
             return await self.launch_shard(gateway, shard_id)
 
@@ -483,18 +481,21 @@ class AutoShardedClient(Client):
 
         Closes the connection to Discord.
         """
-        if self.is_closed():
-            return
+        if self._closing_task:
+            return await self._closing_task
 
-        self._closed = True
-        await self._connection.close()
+        async def _close():
+            await self._connection.close()
 
-        to_close = [asyncio.ensure_future(shard.close(), loop=self.loop) for shard in self.__shards.values()]
-        if to_close:
-            await asyncio.wait(to_close)
+            to_close = [asyncio.ensure_future(shard.close(), loop=self.loop) for shard in self.__shards.values()]
+            if to_close:
+                await asyncio.wait(to_close)
 
-        await self.http.close()
-        self.__queue.put_nowait(EventItem(EventType.clean_close, None, None))
+            await self.http.close()
+            self.__queue.put_nowait(EventItem(EventType.clean_close, None, None))
+
+        self._closing_task = asyncio.create_task(_close())
+        await self._closing_task
 
     async def change_presence(
         self,
