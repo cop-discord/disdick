@@ -613,6 +613,123 @@ class MessageInteraction(Hashable):
         return utils.snowflake_time(self.id)
 
 
+class MessageInteractionMetadata(Hashable):
+    """Represents the interaction metadata of a :class:`Message` if
+    it was sent in response to an interaction.
+
+    .. versionadded:: 2.4
+
+    .. container:: operations
+
+        .. describe:: x == y
+
+            Checks if two message interactions are equal.
+
+        .. describe:: x != y
+
+            Checks if two message interactions are not equal.
+
+        .. describe:: hash(x)
+
+            Returns the message interaction's hash.
+
+    Attributes
+    -----------
+    id: :class:`int`
+        The interaction ID.
+    type: :class:`InteractionType`
+        The interaction type.
+    user: :class:`User`
+        The user that invoked the interaction.
+    original_response_message_id: Optional[:class:`int`]
+        The ID of the original response message if the message is a follow-up.
+    interacted_message_id: Optional[:class:`int`]
+        The ID of the message that containes the interactive components, if applicable.
+    modal_interaction: Optional[:class:`.MessageInteractionMetadata`]
+        The metadata of the modal submit interaction that triggered this interaction, if applicable.
+    """
+
+    __slots__: Tuple[str, ...] = (
+        'id',
+        'type',
+        'user',
+        'original_response_message_id',
+        'interacted_message_id',
+        'modal_interaction',
+        '_integration_owners',
+        '_state',
+        '_guild',
+    )
+
+    def __init__(self, *, state: ConnectionState, guild: Optional[Guild], data: MessageInteractionMetadataPayload) -> None:
+        self._guild: Optional[Guild] = guild
+        self._state: ConnectionState = state
+
+        self.id: int = int(data['id'])
+        self.type: InteractionType = try_enum(InteractionType, data['type'])
+        self.user = state.create_user(data['user'])
+        self._integration_owners: Dict[int, int] = {
+            int(key): int(value) for key, value in data.get('authorizing_integration_owners', {}).items()
+        }
+
+        self.original_response_message_id: Optional[int] = None
+        try:
+            self.original_response_message_id = int(data['original_response_message_id'])
+        except KeyError:
+            pass
+
+        self.interacted_message_id: Optional[int] = None
+        try:
+            self.interacted_message_id = int(data['interacted_message_id'])
+        except KeyError:
+            pass
+
+        self.modal_interaction: Optional[MessageInteractionMetadata] = None
+        try:
+            self.modal_interaction = MessageInteractionMetadata(
+                state=state, guild=guild, data=data['triggering_interaction_metadata']
+            )
+        except KeyError:
+            pass
+
+    def __repr__(self) -> str:
+        return f'<MessageInteraction id={self.id} type={self.type!r} user={self.user!r}>'
+
+    @property
+    def created_at(self) -> datetime.datetime:
+        """:class:`datetime.datetime`: The interaction's creation time in UTC."""
+        return utils.snowflake_time(self.id)
+
+    @property
+    def original_response_message(self) -> Optional[Message]:
+        """Optional[:class:`~discord.Message`]: The original response message if the message
+        is a follow-up and is found in cache.
+        """
+        if self.original_response_message_id:
+            return self._state._get_message(self.original_response_message_id)
+        return None
+
+    @property
+    def interacted_message(self) -> Optional[Message]:
+        """Optional[:class:`~discord.Message`]: The message that
+        containes the interactive components, if applicable and is found in cache.
+        """
+        if self.interacted_message_id:
+            return self._state._get_message(self.interacted_message_id)
+        return None
+
+    def is_guild_integration(self) -> bool:
+        """:class:`bool`: Returns ``True`` if the interaction is a guild integration."""
+        if self._guild:
+            return self._guild.id == self._integration_owners.get(0)
+
+        return False
+
+    def is_user_integration(self) -> bool:
+        """:class:`bool`: Returns ``True`` if the interaction is a user integration."""
+        return self.user.id == self._integration_owners.get(1)
+
+
 def flatten_handlers(cls: Type[Message]) -> Type[Message]:
     prefix = len('_handle_')
     handlers = [
@@ -626,6 +743,7 @@ def flatten_handlers(cls: Type[Message]) -> Type[Message]:
     cls._HANDLERS = handlers
     cls._CACHED_SLOTS = [attr for attr in cls.__slots__ if attr.startswith('_cs_')]
     return cls
+
 
 
 class MessageApplication:
@@ -1590,6 +1708,7 @@ class Message(PartialMessage, Hashable):
         'components',
         'interaction',
         'role_subscription',
+        'interaction_metadata',
         'application_id',
         'position',
     )
@@ -1645,6 +1764,13 @@ class Message(PartialMessage, Hashable):
             pass
         else:
             self.interaction = MessageInteraction(state=state, guild=self.guild, data=interaction)
+                self.interaction_metadata: Optional[MessageInteractionMetadata] = None
+        try:
+            interaction_metadata = data['interaction_metadata']
+        except KeyError:
+            pass
+        else:
+            self.interaction_metadata = MessageInteractionMetadata(state=state, guild=self.guild, data=interaction_metadata)
 
         try:
             ref = data['message_reference']
