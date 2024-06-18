@@ -1430,7 +1430,7 @@ class _ColourFormatter(loguru.Formatter):
         return output
 
 
-def setup_loguru(
+def setup_logging(
     *,
     handler: loguru.Handler = MISSING,
     formatter: loguru.Formatter = MISSING,
