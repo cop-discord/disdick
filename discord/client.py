@@ -1475,6 +1475,30 @@ class Client:
     @overload
     async def wait_for(
         self,
+        event: Literal['poll_vote_add', 'poll_vote_remove'],
+        /,
+        *,
+        check: Optional[Callable[[Union[User, Member], PollAnswer], bool]] = None,
+        timeout: Optional[float] = None,
+    ) -> Tuple[Union[User, Member], PollAnswer]:
+        ...
+
+    @overload
+    async def wait_for(
+        self,
+        event: Literal['raw_poll_vote_add', 'raw_poll_vote_remove'],
+        /,
+        *,
+        check: Optional[Callable[[RawPollVoteActionEvent], bool]] = None,
+        timeout: Optional[float] = None,
+    ) -> RawPollVoteActionEvent:
+        ...
+
+    # Commands
+
+    @overload
+    async def wait_for(
+        self,
         event: Literal['interaction'],
         /,
         *,
