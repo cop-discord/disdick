@@ -26,7 +26,7 @@ from __future__ import annotations
 from typing import Any, Callable, ClassVar, Coroutine, Dict, Iterator, List, Optional, Sequence, TYPE_CHECKING, Tuple, Type
 from functools import partial
 from itertools import groupby
-
+import traceback
 import asyncio
 import loguru
 import sys
@@ -413,7 +413,10 @@ class View:
         item: :class:`Item`
             The item that failed the dispatch.
         """
-        _log.error('Ignoring exception in view {} for item {}', self, item, exc_info=error)
+        exc = "".join(
+            traceback.format_exception(type(error), error, error.__traceback__)
+        )
+        _log.error('Ignoring exception in view {} for item {}\n{}', self, item, exc, exc_info=error)
 
     async def _scheduled_task(self, item: Item, interaction: Interaction):
         try:
