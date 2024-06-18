@@ -534,6 +534,7 @@ class ViewStore:
         self._views: Dict[Optional[int], Dict[Tuple[int, str], Item[View]]] = {}
         # message_id: View
         self._synced_message_views: Dict[int, View] = {}
+        self._dynamic_items: Dict[re.Pattern[str], Type[DynamicItem[Item[Any]]]] = {}
         # custom_id: Modal
         self._modals: Dict[str, Modal] = {}
         self._state: ConnectionState = state
