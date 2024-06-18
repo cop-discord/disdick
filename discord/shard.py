@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import traceback
 
 import aiohttp
 import yarl
@@ -471,7 +472,10 @@ class AutoShardedClient(Client):
             elif item.type == EventType.reconnect:
                 await item.shard.reconnect()
             elif item.type == EventType.terminate:
-                _log.info(f"{item} : {item.error} : {item.type} {dir(item)}")
+                exc = "".join(
+                    traceback.format_exception(type(item.error), item.error, item.error.__traceback__)
+                )
+                _log.info(f"{item} : {item.error} : {item.type} {exc}")
                 await self.close()
                 raise item.error
             elif item.type == EventType.clean_close:
