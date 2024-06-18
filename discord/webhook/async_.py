@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-import loguru
+import logging
 import asyncio
 import re
 
@@ -47,7 +47,6 @@ from ..http import Route, handle_message_parameters, MultipartParameters, HTTPCl
 from ..mixins import Hashable
 from ..channel import TextChannel, ForumChannel, PartialMessageable, ForumTag
 from ..file import File
-from ..globals import get_global
 
 __all__ = (
     'Webhook',
@@ -56,7 +55,7 @@ __all__ = (
     'PartialWebhookGuild',
 )
 
-_log = get_global("logger", loguru.logger)
+_log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -73,6 +72,7 @@ if TYPE_CHECKING:
     from ..channel import VoiceChannel
     from ..abc import Snowflake
     from ..ui.view import View
+    from ..poll import Poll
     import datetime
     from ..types.webhook import (
         Webhook as WebhookPayload,
@@ -89,7 +89,7 @@ if TYPE_CHECKING:
         PartialChannel as PartialChannelPayload,
     )
     from ..types.emoji import PartialEmoji as PartialEmojiPayload
-    from ..types.snowflake import SnowflakeList 
+    from ..types.snowflake import SnowflakeList
 
     BE = TypeVar('BE', bound=BaseException)
     _State = Union[ConnectionState, '_WebhookState']
@@ -180,7 +180,11 @@ class AsyncWebhookAdapter:
                         method, url, data=to_send, headers=headers, params=params, proxy=proxy, proxy_auth=proxy_auth
                     ) as response:
                         _log.debug(
-                            f'Webhook ID {webhook_id} with {method} {url} has returned status code {response.status}',
+                            'Webhook ID %s with %s %s has returned status code %s',
+                            webhook_id,
+                            method,
+                            url,
+                            response.status,
                         )
                         data = await json_or_text(response)
 
@@ -188,7 +192,9 @@ class AsyncWebhookAdapter:
                         if remaining == '0' and response.status != 429:
                             delta = utils._parse_ratelimit_header(response)
                             _log.debug(
-                                f'Webhook ID {webhook_id} has exhausted its rate limit bucket (retry: {delta}).',
+                                'Webhook ID %s has exhausted its rate limit bucket (retry: %s).',
+                                webhook_id,
+                                delta,
                             )
                             lock.delay_by(delta)
 
@@ -198,9 +204,10 @@ class AsyncWebhookAdapter:
                         if response.status == 429:
                             if not response.headers.get('Via'):
                                 raise HTTPException(response, data)
+                            fmt = 'Webhook ID %s is rate limited. Retrying in %.2f seconds.'
+
                             retry_after: float = data['retry_after']  # type: ignore
-                            fmt = f'Webhook ID {webhook_id} is rate limited. Retrying in {retry_after:.2f} seconds.'
-                            _log.warning(fmt)
+                            _log.warning(fmt, webhook_id, retry_after)
                             await asyncio.sleep(retry_after)
                             continue
 
@@ -535,6 +542,7 @@ def interaction_message_response_params(
     view: Optional[View] = MISSING,
     allowed_mentions: Optional[AllowedMentions] = MISSING,
     previous_allowed_mentions: Optional[AllowedMentions] = None,
+    poll: Poll = MISSING,
 ) -> MultipartParameters:
     if files is not MISSING and file is not MISSING:
         raise TypeError('Cannot mix file and files keyword arguments.')
@@ -601,6 +609,9 @@ def interaction_message_response_params(
                 attachments_payload.append(attachment.to_dict())
 
         data['attachments'] = attachments_payload
+
+    if poll is not MISSING:
+        data['poll'] = poll._to_dict()
 
     multipart = []
     if files:
@@ -710,9 +721,14 @@ class _WebhookState:
             return self._parent._get_guild(guild_id)
         return None
 
-    def store_user(self, data: Union[UserPayload, PartialUserPayload]) -> BaseUser:
+    def _get_poll(self, msg_id: Optional[int]) -> Optional[Poll]:
         if self._parent is not None:
-            return self._parent.store_user(data)
+            return self._parent._get_poll(msg_id)
+        return None
+
+    def store_user(self, data: Union[UserPayload, PartialUserPayload], *, cache: bool = True) -> BaseUser:
+        if self._parent is not None:
+            return self._parent.store_user(data, cache=cache)
         # state parameter is artificial
         return BaseUser(state=self, data=data)  # type: ignore
 
@@ -1149,7 +1165,7 @@ class Webhook(BaseWebhook):
         self.proxy_auth: Optional[aiohttp.BasicAuth] = proxy_auth
 
     def __repr__(self) -> str:
-        return f'<Webhook id={self.id!r}>'
+        return f'<Webhook id={self.id!r} type={self.type!r} name={self.name!r}>'
 
     @property
     def url(self) -> str:
@@ -1270,7 +1286,7 @@ class Webhook(BaseWebhook):
             A partial :class:`Webhook`.
             A partial webhook is just a webhook object with an ID and a token.
         """
-        m = re.search(r'discord(?:app)?\.com/api/webhooks/(?P<id>[0-9]{17,20})/(?P<token>[A-Za-z0-9\.\-\_]{60,68})', url)
+        m = re.search(r'discord(?:app)?\.com/api/webhooks/(?P<id>[0-9]{17,20})/(?P<token>[A-Za-z0-9\.\-\_]{60,})', url)
         if m is None:
             raise ValueError('Invalid webhook URL given.')
 
@@ -1513,8 +1529,7 @@ class Webhook(BaseWebhook):
                 proxy_auth=self.proxy_auth,
                 reason=reason,
             )
-
-        if prefer_auth and self.auth_token:
+        elif prefer_auth and self.auth_token:
             data = await adapter.edit_webhook(
                 self.id,
                 self.auth_token,
@@ -1591,6 +1606,8 @@ class Webhook(BaseWebhook):
         wait: Literal[True],
         suppress_embeds: bool = MISSING,
         silent: bool = MISSING,
+        applied_tags: List[ForumTag] = MISSING,
+        poll: Poll = MISSING,
     ) -> WebhookMessage:
         ...
 
@@ -1614,6 +1631,8 @@ class Webhook(BaseWebhook):
         wait: Literal[False] = ...,
         suppress_embeds: bool = MISSING,
         silent: bool = MISSING,
+        applied_tags: List[ForumTag] = MISSING,
+        poll: Poll = MISSING,
     ) -> None:
         ...
 
@@ -1635,8 +1654,9 @@ class Webhook(BaseWebhook):
         thread_name: str = MISSING,
         wait: bool = False,
         suppress_embeds: bool = False,
-        applied_tags: List[ForumTag] = MISSING,
         silent: bool = False,
+        applied_tags: List[ForumTag] = MISSING,
+        poll: Poll = MISSING,
     ) -> Optional[WebhookMessage]:
         """|coro|
 
@@ -1722,6 +1742,19 @@ class Webhook(BaseWebhook):
             in the UI, but will not actually send a notification.
 
             .. versionadded:: 2.2
+        applied_tags: List[:class:`ForumTag`]
+            Tags to apply to the thread if the webhook belongs to a :class:`~discord.ForumChannel`.
+
+            .. versionadded:: 2.4
+
+        poll: :class:`Poll`
+            The poll to send with this message.
+
+            .. warning::
+
+                When sending a Poll via webhook, you cannot manually end it.
+
+            .. versionadded:: 2.4
 
         Raises
         --------
@@ -1800,6 +1833,7 @@ class Webhook(BaseWebhook):
             allowed_mentions=allowed_mentions,
             previous_allowed_mentions=previous_mentions,
             applied_tags=applied_tag_ids,
+            poll=poll,
         ) as params:
             adapter = async_context.get()
             thread_id: Optional[int] = None
@@ -1826,6 +1860,9 @@ class Webhook(BaseWebhook):
         if view is not MISSING and not view.is_finished():
             message_id = None if msg is None else msg.id
             self._state.store_view(view, message_id)
+
+        if poll is not MISSING and msg:
+            poll._update(msg)
 
         return msg
 
