@@ -471,7 +471,7 @@ class AutoShardedClient(Client):
             elif item.type == EventType.reconnect:
                 await item.shard.reconnect()
             elif item.type == EventType.terminate:
-                _log.info(f"{item}")
+                _log.info(f"{item} : {item.error} : {item.type} {dir(item)}")
                 await self.close()
                 raise item.error
             elif item.type == EventType.clean_close:
@@ -482,6 +482,7 @@ class AutoShardedClient(Client):
 
         Closes the connection to Discord.
         """
+        
         if self._closing_task:
             return await self._closing_task
 
