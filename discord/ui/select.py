@@ -69,7 +69,7 @@ __all__ = (
 )
 
 if TYPE_CHECKING:
-    from typing_extensions import TypeAlias, Self, TypeGuard
+    from typing_extensions import TypeAlias, TypeGuard
 
     from .view import View
     from ..types.components import SelectMenu as SelectMenuPayload
@@ -216,6 +216,13 @@ class BaseSelect(Item[V]):
         'max_values',
         'disabled',
     )
+    __component_attributes__: Tuple[str, ...] = (
+        'custom_id',
+        'placeholder',
+        'min_values',
+        'max_values',
+        'disabled',
+    )
 
     def __init__(
         self,
@@ -335,12 +342,17 @@ class BaseSelect(Item[V]):
         return True
 
     @classmethod
-    def from_component(cls, component: SelectMenu) -> Self:
-        return cls(
-            **{k: getattr(component, k) for k in cls.__item_repr_attributes__},
-            custom_id=component.custom_id,
-            row=None,
-        )
+    def from_component(cls, component: SelectMenu) -> BaseSelect[V]:
+        type_to_cls: Dict[ComponentType, Type[BaseSelect[Any]]] = {
+            ComponentType.string_select: Select,
+            ComponentType.user_select: UserSelect,
+            ComponentType.role_select: RoleSelect,
+            ComponentType.channel_select: ChannelSelect,
+            ComponentType.mentionable_select: MentionableSelect,
+        }
+        constructor = type_to_cls.get(component.type, Select)
+        kwrgs = {key: getattr(component, key) for key in constructor.__component_attributes__}
+        return constructor(**kwrgs)
 
 
 class Select(BaseSelect[V]):
@@ -354,8 +366,10 @@ class Select(BaseSelect[V]):
     custom_id: :class:`str`
         The ID of the select menu that gets received during an interaction.
         If not given then one is generated for you.
+        Can only be up to 100 characters.
     placeholder: Optional[:class:`str`]
         The placeholder text that is shown if nothing is selected, if any.
+        Can only be up to 150 characters.
     min_values: :class:`int`
         The minimum number of items that must be chosen for this select menu.
         Defaults to 1 and must be between 0 and 25.
@@ -364,6 +378,7 @@ class Select(BaseSelect[V]):
         Defaults to 1 and must be between 1 and 25.
     options: List[:class:`discord.SelectOption`]
         A list of options that can be selected in this menu.
+        Can only contain up to 25 items.
     disabled: :class:`bool`
         Whether the select is disabled or not.
     row: Optional[:class:`int`]
@@ -374,7 +389,7 @@ class Select(BaseSelect[V]):
         ordering. The row number must be between 0 and 4 (i.e. zero indexed).
     """
 
-    __item_repr_attributes__ = BaseSelect.__item_repr_attributes__ + ('options',)
+    __component_attributes__ = BaseSelect.__component_attributes__ + ('options',)
 
     def __init__(
         self,
@@ -443,7 +458,8 @@ class Select(BaseSelect[V]):
             Can only be up to 100 characters.
         value: :class:`str`
             The value of the option. This is not displayed to users.
-            If not given, defaults to the label. Can only be up to 100 characters.
+            If not given, defaults to the label.
+            Can only be up to 100 characters.
         description: Optional[:class:`str`]
             An additional description of the option, if any.
             Can only be up to 100 characters.
@@ -503,8 +519,10 @@ class UserSelect(BaseSelect[V]):
     custom_id: :class:`str`
         The ID of the select menu that gets received during an interaction.
         If not given then one is generated for you.
+        Can only be up to 100 characters.
     placeholder: Optional[:class:`str`]
         The placeholder text that is shown if nothing is selected, if any.
+        Can only be up to 150 characters.
     min_values: :class:`int`
         The minimum number of items that must be chosen for this select menu.
         Defaults to 1 and must be between 0 and 25.
@@ -515,6 +533,7 @@ class UserSelect(BaseSelect[V]):
         Whether the select is disabled or not.
     default_values: Sequence[:class:`~discord.abc.Snowflake`]
         A list of objects representing the users that should be selected by default.
+        Number of items must be in range of ``min_values`` and ``max_values``.
 
         .. versionadded:: 2.4
     row: Optional[:class:`int`]
@@ -525,7 +544,7 @@ class UserSelect(BaseSelect[V]):
         ordering. The row number must be between 0 and 4 (i.e. zero indexed).
     """
 
-    __item_repr_attributes__ = BaseSelect.__item_repr_attributes__ + ('default_values',)
+    __component_attributes__ = BaseSelect.__component_attributes__ + ('default_values',)
 
     def __init__(
         self,
@@ -592,8 +611,10 @@ class RoleSelect(BaseSelect[V]):
     custom_id: :class:`str`
         The ID of the select menu that gets received during an interaction.
         If not given then one is generated for you.
+        Can only be up to 100 characters.
     placeholder: Optional[:class:`str`]
         The placeholder text that is shown if nothing is selected, if any.
+        Can only be up to 150 characters.
     min_values: :class:`int`
         The minimum number of items that must be chosen for this select menu.
         Defaults to 1 and must be between 0 and 25.
@@ -603,7 +624,8 @@ class RoleSelect(BaseSelect[V]):
     disabled: :class:`bool`
         Whether the select is disabled or not.
     default_values: Sequence[:class:`~discord.abc.Snowflake`]
-        A list of objects representing the users that should be selected by default.
+        A list of objects representing the roles that should be selected by default.
+        Number of items must be in range of ``min_values`` and ``max_values``.
 
         .. versionadded:: 2.4
     row: Optional[:class:`int`]
@@ -614,7 +636,7 @@ class RoleSelect(BaseSelect[V]):
         ordering. The row number must be between 0 and 4 (i.e. zero indexed).
     """
 
-    __item_repr_attributes__ = BaseSelect.__item_repr_attributes__ + ('default_values',)
+    __component_attributes__ = BaseSelect.__component_attributes__ + ('default_values',)
 
     def __init__(
         self,
@@ -676,8 +698,10 @@ class MentionableSelect(BaseSelect[V]):
     custom_id: :class:`str`
         The ID of the select menu that gets received during an interaction.
         If not given then one is generated for you.
+        Can only be up to 100 characters.
     placeholder: Optional[:class:`str`]
         The placeholder text that is shown if nothing is selected, if any.
+        Can only be up to 150 characters.
     min_values: :class:`int`
         The minimum number of items that must be chosen for this select menu.
         Defaults to 1 and must be between 0 and 25.
@@ -689,6 +713,7 @@ class MentionableSelect(BaseSelect[V]):
     default_values: Sequence[:class:`~discord.abc.Snowflake`]
         A list of objects representing the users/roles that should be selected by default.
         if :class:`.Object` is passed, then the type must be specified in the constructor.
+        Number of items must be in range of ``min_values`` and ``max_values``.
 
         .. versionadded:: 2.4
     row: Optional[:class:`int`]
@@ -699,7 +724,7 @@ class MentionableSelect(BaseSelect[V]):
         ordering. The row number must be between 0 and 4 (i.e. zero indexed).
     """
 
-    __item_repr_attributes__ = BaseSelect.__item_repr_attributes__ + ('default_values',)
+    __component_attributes__ = BaseSelect.__component_attributes__ + ('default_values',)
 
     def __init__(
         self,
@@ -766,10 +791,12 @@ class ChannelSelect(BaseSelect[V]):
     custom_id: :class:`str`
         The ID of the select menu that gets received during an interaction.
         If not given then one is generated for you.
+        Can only be up to 100 characters.
     channel_types: List[:class:`~discord.ChannelType`]
         The types of channels to show in the select menu. Defaults to all channels.
     placeholder: Optional[:class:`str`]
         The placeholder text that is shown if nothing is selected, if any.
+        Can only be up to 150 characters.
     min_values: :class:`int`
         The minimum number of items that must be chosen for this select menu.
         Defaults to 1 and must be between 0 and 25.
@@ -780,6 +807,7 @@ class ChannelSelect(BaseSelect[V]):
         Whether the select is disabled or not.
     default_values: Sequence[:class:`~discord.abc.Snowflake`]
         A list of objects representing the channels that should be selected by default.
+        Number of items must be in range of ``min_values`` and ``max_values``.
 
         .. versionadded:: 2.4
     row: Optional[:class:`int`]
@@ -790,7 +818,7 @@ class ChannelSelect(BaseSelect[V]):
         ordering. The row number must be between 0 and 4 (i.e. zero indexed).
     """
 
-    __item_repr_attributes__ = BaseSelect.__item_repr_attributes__ + (
+    __component_attributes__ = BaseSelect.__component_attributes__ + (
         'channel_types',
         'default_values',
     )
@@ -859,7 +887,7 @@ class ChannelSelect(BaseSelect[V]):
 @overload
 def select(
     *,
-    cls: Type[SelectT] = Select[V],
+    cls: Type[SelectT] = Select[Any],
     options: List[SelectOption] = MISSING,
     channel_types: List[ChannelType] = ...,
     placeholder: Optional[str] = ...,
@@ -875,7 +903,7 @@ def select(
 @overload
 def select(
     *,
-    cls: Type[UserSelectT] = UserSelect[V],
+    cls: Type[UserSelectT] = UserSelect[Any],
     options: List[SelectOption] = MISSING,
     channel_types: List[ChannelType] = ...,
     placeholder: Optional[str] = ...,
@@ -892,7 +920,7 @@ def select(
 @overload
 def select(
     *,
-    cls: Type[RoleSelectT] = RoleSelect[V],
+    cls: Type[RoleSelectT] = RoleSelect[Any],
     options: List[SelectOption] = MISSING,
     channel_types: List[ChannelType] = ...,
     placeholder: Optional[str] = ...,
@@ -909,7 +937,7 @@ def select(
 @overload
 def select(
     *,
-    cls: Type[ChannelSelectT] = ChannelSelect[V],
+    cls: Type[ChannelSelectT] = ChannelSelect[Any],
     options: List[SelectOption] = MISSING,
     channel_types: List[ChannelType] = ...,
     placeholder: Optional[str] = ...,
@@ -926,7 +954,7 @@ def select(
 @overload
 def select(
     *,
-    cls: Type[MentionableSelectT] = MentionableSelect[V],
+    cls: Type[MentionableSelectT] = MentionableSelect[Any],
     options: List[SelectOption] = MISSING,
     channel_types: List[ChannelType] = MISSING,
     placeholder: Optional[str] = ...,
@@ -942,7 +970,7 @@ def select(
 
 def select(
     *,
-    cls: Type[BaseSelectT] = Select[V],
+    cls: Type[BaseSelectT] = Select[Any],
     options: List[SelectOption] = MISSING,
     channel_types: List[ChannelType] = MISSING,
     placeholder: Optional[str] = None,
@@ -999,9 +1027,11 @@ def select(
         get overridden.
     placeholder: Optional[:class:`str`]
         The placeholder text that is shown if nothing is selected, if any.
+        Can only be up to 150 characters.
     custom_id: :class:`str`
         The ID of the select menu that gets received during an interaction.
         It is recommended not to set this parameter to prevent conflicts.
+        Can only be up to 100 characters.
     row: Optional[:class:`int`]
         The relative row this select menu belongs to. A Discord component can only have 5
         rows. By default, items are arranged automatically into those 5 rows. If you'd
@@ -1017,6 +1047,7 @@ def select(
     options: List[:class:`discord.SelectOption`]
         A list of options that can be selected in this menu. This can only be used with
         :class:`Select` instances.
+        Can only contain up to 25 items.
     channel_types: List[:class:`~discord.ChannelType`]
         The types of channels to show in the select menu. Defaults to all channels. This can only be used
         with :class:`ChannelSelect` instances.
@@ -1025,6 +1056,7 @@ def select(
     default_values: Sequence[:class:`~discord.abc.Snowflake`]
         A list of objects representing the default values for the select menu. This cannot be used with regular :class:`Select` instances.
         If ``cls`` is :class:`MentionableSelect` and :class:`.Object` is passed, then the type must be specified in the constructor.
+        Number of items must be in range of ``min_values`` and ``max_values``.
 
         .. versionadded:: 2.4
     """

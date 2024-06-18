@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import loguru
+import logging
 import os
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Dict, Optional, Sequence, ClassVar, List
@@ -47,9 +47,9 @@ __all__ = (
     'Modal',
 )
 # fmt: on
-from discord.globals import get_global
 
-_log = get_global("logger", loguru.logger)
+
+_log = logging.getLogger(__name__)
 
 
 class Modal(View):
@@ -64,6 +64,7 @@ class Modal(View):
 
     .. code-block:: python3
 
+        import discord
         from discord import ui
 
         class Questionnaire(ui.Modal, title='Questionnaire Response'):
@@ -76,7 +77,8 @@ class Modal(View):
     Parameters
     -----------
     title: :class:`str`
-        The title of the modal. Can only be up to 45 characters.
+        The title of the modal.
+        Can only be up to 45 characters.
     timeout: Optional[:class:`float`]
         Timeout in seconds from last interaction with the UI before no longer accepting input.
         If ``None`` then there is no timeout.
@@ -171,7 +173,7 @@ class Modal(View):
             else:
                 item = find(lambda i: i.custom_id == component['custom_id'], self._children)  # type: ignore
                 if item is None:
-                    _log.debug("Modal interaction referencing unknown item custom_id . Discarding", component['custom_id'])
+                    _log.debug("Modal interaction referencing unknown item custom_id %s. Discarding", component['custom_id'])
                     continue
                 item._refresh_state(interaction, component)  # type: ignore
 
