@@ -75,6 +75,7 @@ if TYPE_CHECKING:
         MessageApplication as MessageApplicationPayload,
         MessageActivity as MessageActivityPayload,
         RoleSubscriptionData as RoleSubscriptionDataPayload,
+        MessageInteractionMetadata as MessageInteractionMetadataPayload,
     )
 
     from .types.interactions import MessageInteraction as MessageInteractionPayload
