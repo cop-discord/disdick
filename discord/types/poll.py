@@ -24,60 +24,65 @@ DEALINGS IN THE SOFTWARE.
 
 from __future__ import annotations
 
-from typing import List, Literal, TypedDict, Union, Optional
+
+from typing import List, TypedDict, Optional, Literal, TYPE_CHECKING
 from typing_extensions import NotRequired
 
 from .snowflake import Snowflake
-from .user import User
 
-StickerFormatType = Literal[1, 2, 3, 4]
+if TYPE_CHECKING:
+    from .user import User
+    from .emoji import PartialEmoji
 
 
-class StickerItem(TypedDict):
+LayoutType = Literal[1]  # 1 = Default
+
+
+class PollMedia(TypedDict):
+    text: str
+    emoji: NotRequired[Optional[PartialEmoji]]
+
+
+class PollAnswer(TypedDict):
+    poll_media: PollMedia
+
+
+class PollAnswerWithID(PollAnswer):
+    answer_id: int
+
+
+class PollAnswerCount(TypedDict):
     id: Snowflake
-    name: str
-    format_type: StickerFormatType
+    count: int
+    me_voted: bool
 
 
-class BaseSticker(TypedDict):
-    id: Snowflake
-    name: str
-    description: str
-    tags: str
-    format_type: StickerFormatType
+class PollAnswerVoters(TypedDict):
+    users: List[User]
 
 
-class StandardSticker(BaseSticker):
-    type: Literal[1]
-    sort_value: int
-    pack_id: Snowflake
+class PollResult(TypedDict):
+    is_finalized: bool
+    answer_counts: List[PollAnswerCount]
 
 
-class GuildSticker(BaseSticker):
-    type: Literal[2]
-    available: NotRequired[bool]
-    guild_id: Snowflake
-    user: NotRequired[User]
+class PollCreate(TypedDict):
+    allow_multiselect: bool
+    answers: List[PollAnswer]
+    duration: float
+    layout_type: LayoutType
+    question: PollMedia
 
 
-Sticker = Union[StandardSticker, GuildSticker]
-
-
-class StickerPack(TypedDict):
-    id: Snowflake
-    stickers: List[StandardSticker]
-    name: str
-    sku_id: Snowflake
-    cover_sticker_id: Optional[Snowflake]
-    description: str
-    banner_asset_id: Optional[Snowflake]
-
-
-class CreateGuildSticker(TypedDict):
-    name: str
-    tags: str
-    description: NotRequired[str]
-
-
-class ListPremiumStickerPacks(TypedDict):
-    sticker_packs: List[StickerPack]
+# We don't subclass Poll as it will
+# still have the duration field, which
+# is converted into expiry when poll is
+# fetched from a message or returned
+# by a `send` method in a Messageable
+class Poll(TypedDict):
+    allow_multiselect: bool
+    answers: List[PollAnswerWithID]
+    expiry: str
+    layout_type: LayoutType
+    question: PollMedia
+    results: PollResult

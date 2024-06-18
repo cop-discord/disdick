@@ -25,7 +25,9 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from __future__ import annotations
-from typing import Any, Dict, Optional, Generic, TYPE_CHECKING, Sequence, Tuple, Union
+
+import logging
+from typing import Any, Dict, Optional, Generic, TYPE_CHECKING, Sequence, Tuple, Union, List
 import asyncio
 import datetime
 
@@ -33,8 +35,9 @@ from . import utils
 from .enums import try_enum, Locale, InteractionType, InteractionResponseType
 from .errors import InteractionResponded, HTTPException, ClientException, DiscordException
 from .flags import MessageFlags
-from .channel import PartialMessageable, ChannelType
+from .channel import ChannelType
 from ._types import ClientT
+from .sku import Entitlement
 
 from .user import User
 from .member import Member
@@ -42,8 +45,10 @@ from .message import Message, Attachment
 from .permissions import Permissions
 from .http import handle_message_parameters
 from .webhook.async_ import async_context, Webhook, interaction_response_params, interaction_message_response_params
+from .app_commands.installs import AppCommandContext
 from .app_commands.namespace import Namespace
 from .app_commands.translator import locale_str, TranslationContext, TranslationContextLocation
+from .channel import _threaded_channel_factory
 
 __all__ = (
     'Interaction',
@@ -60,6 +65,7 @@ if TYPE_CHECKING:
     from .types.webhook import (
         Webhook as WebhookPayload,
     )
+    from .types.snowflake import Snowflake
     from .guild import Guild
     from .state import ConnectionState
     from .file import File
@@ -69,12 +75,20 @@ if TYPE_CHECKING:
     from .ui.view import View
     from .app_commands.models import Choice, ChoiceT
     from .ui.modal import Modal
-    from .channel import VoiceChannel, StageChannel, TextChannel, ForumChannel, CategoryChannel
+    from .channel import VoiceChannel, StageChannel, TextChannel, ForumChannel, CategoryChannel, DMChannel, GroupChannel
     from .threads import Thread
     from .app_commands.commands import Command, ContextMenu
+    from .poll import Poll
 
     InteractionChannel = Union[
-        VoiceChannel, StageChannel, TextChannel, ForumChannel, CategoryChannel, Thread, PartialMessageable
+        VoiceChannel,
+        StageChannel,
+        TextChannel,
+        ForumChannel,
+        CategoryChannel,
+        Thread,
+        DMChannel,
+        GroupChannel,
     ]
 
 MISSING: Any = utils.MISSING
@@ -96,8 +110,14 @@ class Interaction(Generic[ClientT]):
         The interaction type.
     guild_id: Optional[:class:`int`]
         The guild ID the interaction was sent from.
-    channel_id: Optional[:class:`int`]
-        The channel ID the interaction was sent from.
+    channel: Optional[Union[:class:`abc.GuildChannel`, :class:`abc.PrivateChannel`, :class:`Thread`]]
+        The channel the interaction was sent from.
+
+        Note that due to a Discord limitation, if sent from a DM channel :attr:`~DMChannel.recipient` is ``None``.
+    entitlement_sku_ids: List[:class:`int`]
+        The entitlement SKU IDs that the user has.
+    entitlements: List[:class:`Entitlement`]
+        The entitlements that the guild or user has.
     application_id: :class:`int`
         The application ID that the interaction was for.
     user: Union[:class:`User`, :class:`Member`]
@@ -122,13 +142,16 @@ class Interaction(Generic[ClientT]):
     command_failed: :class:`bool`
         Whether the command associated with this interaction failed to execute.
         This includes checks and execution.
+    context: :class:`.AppCommandContext`
+        The context of the interaction.
+
+        .. versionadded:: 2.4
     """
 
     __slots__: Tuple[str, ...] = (
         'id',
         'type',
         'guild_id',
-        'channel_id',
         'data',
         'application_id',
         'message',
@@ -139,6 +162,10 @@ class Interaction(Generic[ClientT]):
         'guild_locale',
         'extras',
         'command_failed',
+        'entitlement_sku_ids',
+        'entitlements',
+        "context",
+        '_integration_owners',
         '_permissions',
         '_app_permissions',
         '_state',
@@ -148,7 +175,7 @@ class Interaction(Generic[ClientT]):
         '_original_response',
         '_cs_response',
         '_cs_followup',
-        '_cs_channel',
+        'channel',
         '_cs_namespace',
         '_cs_command',
     )
@@ -171,9 +198,19 @@ class Interaction(Generic[ClientT]):
         self.data: Optional[InteractionData] = data.get('data')
         self.token: str = data['token']
         self.version: int = data['version']
-        self.channel_id: Optional[int] = utils._get_as_snowflake(data, 'channel_id')
         self.guild_id: Optional[int] = utils._get_as_snowflake(data, 'guild_id')
+        self.channel: Optional[InteractionChannel] = None
         self.application_id: int = int(data['application_id'])
+        self.entitlement_sku_ids: List[int] = [int(x) for x in data.get('entitlement_skus', []) or []]
+        self.entitlements: List[Entitlement] = [Entitlement(self._state, x) for x in data.get('entitlements', [])]
+        # This is not entirely useful currently, unsure how to expose it in a way that it is.
+        self._integration_owners: Dict[int, Snowflake] = {
+            int(k): int(v) for k, v in data.get('authorizing_integration_owners', {}).items()
+        }
+        try:
+            self.context = AppCommandContext._from_value([data['context']])
+        except KeyError:
+            self.context = AppCommandContext()
 
         self.locale: Locale = try_enum(Locale, data.get('locale', 'en-US'))
         self.guild_locale: Optional[Locale]
@@ -181,6 +218,29 @@ class Interaction(Generic[ClientT]):
             self.guild_locale = try_enum(Locale, data['guild_locale'])
         except KeyError:
             self.guild_locale = None
+
+        guild = None
+        if self.guild_id:
+            # The data type is a TypedDict but it doesn't narrow to Dict[str, Any] properly
+            guild = self._state._get_or_create_unavailable_guild(self.guild_id, data=data.get('guild'))  # type: ignore
+            if guild.me is None and self._client.user is not None:
+                guild._add_member(Member._from_client_user(user=self._client.user, guild=guild, state=self._state))
+
+        raw_channel = data.get('channel', {})
+        channel_id = utils._get_as_snowflake(raw_channel, 'id')
+        if channel_id is not None and guild is not None:
+            self.channel = guild and guild._resolve_channel(channel_id)
+
+        raw_ch_type = raw_channel.get('type')
+        if self.channel is None and raw_ch_type is not None:
+            factory, ch_type = _threaded_channel_factory(raw_ch_type)  # type is never None
+            if factory is None:
+                logging.info('Unknown channel type {type} for channel ID {id}.'.format_map(raw_channel))
+            else:
+                if ch_type in (ChannelType.group, ChannelType.private):
+                    self.channel = factory(me=self._client.user, data=raw_channel, state=self._state)  # type: ignore
+                elif guild is not None:
+                    self.channel = factory(guild=guild, state=self._state, data=raw_channel)  # type: ignore
 
         self.message: Optional[Message]
         try:
@@ -193,9 +253,7 @@ class Interaction(Generic[ClientT]):
         self._permissions: int = 0
         self._app_permissions: int = int(data.get('app_permissions', 0))
 
-        if self.guild_id:
-            guild = self._state._get_or_create_unavailable_guild(self.guild_id)
-
+        if guild is not None:
             # Upgrade Message.guild in case it's missing with partial guild data
             if self.message is not None and self.message.guild is None:
                 self.message.guild = guild
@@ -225,23 +283,15 @@ class Interaction(Generic[ClientT]):
     @property
     def guild(self) -> Optional[Guild]:
         """Optional[:class:`Guild`]: The guild the interaction was sent from."""
-        return self._state and self._state._get_guild(self.guild_id)
+        # The user.guild attribute is set in __init__ to the fallback guild if available
+        # Therefore, we can use that instead of recreating it every time this property is
+        # accessed
+        return (self._state and self._state._get_guild(self.guild_id)) or getattr(self.user, 'guild', None)
 
-    @utils.cached_slot_property('_cs_channel')
-    def channel(self) -> Optional[InteractionChannel]:
-        """Optional[Union[:class:`abc.GuildChannel`, :class:`PartialMessageable`, :class:`Thread`]]: The channel the interaction was sent from.
-
-        Note that due to a Discord limitation, DM channels are not resolved since there is
-        no data to complete them. These are :class:`PartialMessageable` instead.
-        """
-        guild = self.guild
-        channel = guild and guild._resolve_channel(self.channel_id)
-        if channel is None:
-            if self.channel_id is not None:
-                type = ChannelType.text if self.guild_id is not None else ChannelType.private
-                return PartialMessageable(state=self._state, guild_id=self.guild_id, id=self.channel_id, type=type)
-            return None
-        return channel
+    @property
+    def channel_id(self) -> Optional[int]:
+        """Optional[:class:`int`]: The ID of the channel the interaction was sent from."""
+        return self.channel.id if self.channel is not None else None
 
     @property
     def permissions(self) -> Permissions:
@@ -340,6 +390,22 @@ class Interaction(Generic[ClientT]):
     def is_expired(self) -> bool:
         """:class:`bool`: Returns ``True`` if the interaction is expired."""
         return utils.utcnow() >= self.expires_at
+
+    def is_guild_integration(self) -> bool:
+        """:class:`bool`: Returns ``True`` if the interaction is a guild integration.
+
+        .. versionadded:: 2.4
+        """
+        if self.guild_id:
+            return self.guild_id == self._integration_owners.get(0)
+        return False
+
+    def is_user_integration(self) -> bool:
+        """:class:`bool`: Returns ``True`` if the interaction is a user integration.
+
+        .. versionadded:: 2.4
+        """
+        return self.user.id == self._integration_owners.get(1)
 
     async def original_response(self) -> InteractionMessage:
         """|coro|
@@ -697,6 +763,7 @@ class InteractionResponse(Generic[ClientT]):
         suppress_embeds: bool = False,
         silent: bool = False,
         delete_after: Optional[float] = None,
+        poll: Poll = MISSING,
     ) -> None:
         """|coro|
 
@@ -740,6 +807,10 @@ class InteractionResponse(Generic[ClientT]):
             then it is silently ignored.
 
             .. versionadded:: 2.1
+        poll: :class:`~discord.Poll`
+            The poll to send with this message.
+
+            .. versionadded:: 2.4
 
         Raises
         -------
@@ -777,6 +848,7 @@ class InteractionResponse(Generic[ClientT]):
             allowed_mentions=allowed_mentions,
             flags=flags,
             view=view,
+            poll=poll,
         )
 
         http = parent._state.http
@@ -821,6 +893,7 @@ class InteractionResponse(Generic[ClientT]):
         view: Optional[View] = MISSING,
         allowed_mentions: Optional[AllowedMentions] = MISSING,
         delete_after: Optional[float] = None,
+        suppress_embeds: bool = MISSING,
     ) -> None:
         """|coro|
 
@@ -856,6 +929,13 @@ class InteractionResponse(Generic[ClientT]):
             then it is silently ignored.
 
             .. versionadded:: 2.2
+        suppress_embeds: :class:`bool`
+            Whether to suppress embeds for the message. This removes
+            all the embeds if set to ``True``. If set to ``False``
+            this brings the embeds back if they were suppressed.
+            Using this parameter requires :attr:`~.Permissions.manage_messages`.
+
+            .. versionadded:: 2.4
 
         Raises
         -------
@@ -876,7 +956,7 @@ class InteractionResponse(Generic[ClientT]):
             message_id = msg.id
             # If this was invoked via an application command then we can use its original interaction ID
             # Since this is used as a cache key for view updates
-            original_interaction_id = msg.interaction.id if msg.interaction is not None else None
+            original_interaction_id = msg.interaction_metadata.id if msg.interaction_metadata is not None else None
         else:
             message_id = None
             original_interaction_id = None
@@ -886,6 +966,12 @@ class InteractionResponse(Generic[ClientT]):
 
         if view is not MISSING and message_id is not None:
             state.prevent_view_updates_for(message_id)
+
+        if suppress_embeds is not MISSING:
+            flags = MessageFlags._from_value(0)
+            flags.suppress_embeds = suppress_embeds
+        else:
+            flags = MISSING
 
         adapter = async_context.get()
         params = interaction_message_response_params(
@@ -897,6 +983,7 @@ class InteractionResponse(Generic[ClientT]):
             attachments=attachments,
             previous_allowed_mentions=parent._state.allowed_mentions,
             allowed_mentions=allowed_mentions,
+            flags=flags,
         )
 
         http = parent._state.http
@@ -1025,8 +1112,8 @@ class _InteractionMessageState:
     def _get_guild(self, guild_id):
         return self._parent._get_guild(guild_id)
 
-    def store_user(self, data):
-        return self._parent.store_user(data)
+    def store_user(self, data, *, cache: bool = True):
+        return self._parent.store_user(data, cache=cache)
 
     def create_user(self, data):
         return self._parent.create_user(data)

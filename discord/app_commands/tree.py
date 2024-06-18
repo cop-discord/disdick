@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from __future__ import annotations
-import loguru
+import logging
 import inspect
 
 from typing import (
@@ -58,12 +58,12 @@ from .errors import (
     CommandSyncFailure,
     MissingApplicationID,
 )
+from .installs import AppCommandContext, AppInstallationType
 from .translator import Translator, locale_str
 from ..errors import ClientException, HTTPException
 from ..enums import AppCommandType, InteractionType
 from ..utils import MISSING, _get_as_snowflake, _is_submodule, _shorten
 from .._types import ClientT
-from ..globals import get_global
 
 
 if TYPE_CHECKING:
@@ -79,7 +79,7 @@ if TYPE_CHECKING:
 
 __all__ = ('CommandTree',)
 
-_log = get_global("logger", loguru.logger)
+_log = logging.getLogger(__name__)
 
 
 def _retrieve_guild_ids(
@@ -122,9 +122,26 @@ class CommandTree(Generic[ClientT]):
         to find the guild-specific ``/ping`` command it will fall back to the global ``/ping`` command.
         This has the potential to raise more :exc:`~discord.app_commands.CommandSignatureMismatch` errors
         than usual. Defaults to ``True``.
+    allowed_contexts: :class:`~discord.app_commands.AppCommandContext`
+        The default allowed contexts that applies to all commands in this tree.
+        Note that you can override this on a per command basis.
+
+        .. versionadded:: 2.4
+    allowed_installs: :class:`~discord.app_commands.AppInstallationType`
+        The default allowed install locations that apply to all commands in this tree.
+        Note that you can override this on a per command basis.
+
+        .. versionadded:: 2.4
     """
 
-    def __init__(self, client: ClientT, *, fallback_to_global: bool = True):
+    def __init__(
+        self,
+        client: ClientT,
+        *,
+        fallback_to_global: bool = True,
+        allowed_contexts: AppCommandContext = MISSING,
+        allowed_installs: AppInstallationType = MISSING,
+    ):
         self.client: ClientT = client
         self._http = client.http
         self._state = client._connection
@@ -134,6 +151,8 @@ class CommandTree(Generic[ClientT]):
 
         self._state._command_tree = self
         self.fallback_to_global: bool = fallback_to_global
+        self.allowed_contexts = AppCommandContext() if allowed_contexts is MISSING else allowed_contexts
+        self.allowed_installs = AppInstallationType() if allowed_installs is MISSING else allowed_installs
         self._guild_commands: Dict[int, Dict[str, Union[Command, Group]]] = {}
         self._global_commands: Dict[str, Union[Command, Group]] = {}
         # (name, guild_id, command_type): Command
@@ -288,10 +307,24 @@ class CommandTree(Generic[ClientT]):
         guild: Optional[:class:`~discord.abc.Snowflake`]
             The guild to add the command to. If not given or ``None`` then it
             becomes a global command instead.
+
+            .. note ::
+
+                Due to a Discord limitation, this keyword argument cannot be used in conjunction with
+                contexts (e.g. :func:`.app_commands.allowed_contexts`) or installation types
+                (e.g. :func:`.app_commands.allowed_installs`).
+
         guilds: List[:class:`~discord.abc.Snowflake`]
             The list of guilds to add the command to. This cannot be mixed
             with the ``guild`` parameter. If no guilds are given at all
             then it becomes a global command instead.
+
+            .. note ::
+
+                Due to a Discord limitation, this keyword argument cannot be used in conjunction with
+                contexts (e.g. :func:`.app_commands.allowed_contexts`) or installation types
+                (e.g. :func:`.app_commands.allowed_installs`).
+
         override: :class:`bool`
             Whether to override a command with the same name. If ``False``
             an exception is raised. Default is ``False``.
@@ -723,7 +756,7 @@ class CommandTree(Generic[ClientT]):
         else:
             guild_id = None if guild is None else guild.id
             value = type.value
-            for ((_, g, t), command) in self._context_menus.items():
+            for (_, g, t), command in self._context_menus.items():
                 if g == guild_id and t == value:
                     yield command
 
@@ -858,10 +891,24 @@ class CommandTree(Generic[ClientT]):
         guild: Optional[:class:`~discord.abc.Snowflake`]
             The guild to add the command to. If not given or ``None`` then it
             becomes a global command instead.
+
+            .. note ::
+
+                Due to a Discord limitation, this keyword argument cannot be used in conjunction with
+                contexts (e.g. :func:`.app_commands.allowed_contexts`) or installation types
+                (e.g. :func:`.app_commands.allowed_installs`).
+
         guilds: List[:class:`~discord.abc.Snowflake`]
             The list of guilds to add the command to. This cannot be mixed
             with the ``guild`` parameter. If no guilds are given at all
             then it becomes a global command instead.
+
+            .. note ::
+
+                Due to a Discord limitation, this keyword argument cannot be used in conjunction with
+                contexts (e.g. :func:`.app_commands.allowed_contexts`) or installation types
+                (e.g. :func:`.app_commands.allowed_installs`).
+
         auto_locale_strings: :class:`bool`
             If this is set to ``True``, then all translatable strings will implicitly
             be wrapped into :class:`locale_str` rather than :class:`str`. This could
@@ -941,10 +988,24 @@ class CommandTree(Generic[ClientT]):
         guild: Optional[:class:`~discord.abc.Snowflake`]
             The guild to add the command to. If not given or ``None`` then it
             becomes a global command instead.
+
+            .. note ::
+
+                Due to a Discord limitation, this keyword argument cannot be used in conjunction with
+                contexts (e.g. :func:`.app_commands.allowed_contexts`) or installation types
+                (e.g. :func:`.app_commands.allowed_installs`).
+
         guilds: List[:class:`~discord.abc.Snowflake`]
             The list of guilds to add the command to. This cannot be mixed
             with the ``guild`` parameter. If no guilds are given at all
             then it becomes a global command instead.
+
+            .. note ::
+
+                Due to a Discord limitation, this keyword argument cannot be used in conjunction with
+                contexts (e.g. :func:`.app_commands.allowed_contexts`) or installation types
+                (e.g. :func:`.app_commands.allowed_installs`).
+
         auto_locale_strings: :class:`bool`
             If this is set to ``True``, then all translatable strings will implicitly
             be wrapped into :class:`locale_str` rather than :class:`str`. This could
@@ -1059,9 +1120,9 @@ class CommandTree(Generic[ClientT]):
 
         translator = self.translator
         if translator:
-            payload = [await command.get_translated_payload(translator) for command in commands]
+            payload = [await command.get_translated_payload(self, translator) for command in commands]
         else:
-            payload = [command.to_dict() for command in commands]
+            payload = [command.to_dict(self) for command in commands]
 
         try:
             if guild is None:
@@ -1241,7 +1302,7 @@ class CommandTree(Generic[ClientT]):
                 await command._invoke_autocomplete(interaction, focused, namespace)
             except Exception:
                 # Suppress exception since it can't be handled anyway.
-                pass
+                _log.exception('Ignoring exception in autocomplete for %r', command.qualified_name)
 
             return
 

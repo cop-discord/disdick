@@ -49,6 +49,11 @@ class UnavailableGuild(TypedDict):
     unavailable: NotRequired[bool]
 
 
+class IncidentData(TypedDict):
+    invites_disabled_until: NotRequired[Optional[str]]
+    dms_disabled_until: NotRequired[Optional[str]]
+
+
 DefaultMessageNotificationLevel = Literal[0, 1]
 ExplicitContentFilterLevel = Literal[0, 1, 2]
 MFALevel = Literal[0, 1]
@@ -84,11 +89,9 @@ GuildFeature = Literal[
     'VERIFIED',
     'VIP_REGIONS',
     'WELCOME_SCREEN_ENABLED',
+    'RAID_ALERTS_DISABLED',
 ]
 
-class IncidentData(TypedDict):
-    invites_disabled_until: NotRequired[Optional[str]]
-    dms_disabled_until: NotRequired[Optional[str]]
 
 class _BaseGuildPreview(UnavailableGuild):
     name: str
@@ -183,7 +186,7 @@ class _RolePositionRequired(TypedDict):
 class RolePositionUpdate(_RolePositionRequired, total=False):
     position: Optional[Snowflake]
 
-    
+
 class BulkBanUserResponse(TypedDict):
     banned_users: Optional[List[Snowflake]]
     failed_users: Optional[List[Snowflake]]

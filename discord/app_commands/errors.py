@@ -29,6 +29,7 @@ from typing import Any, TYPE_CHECKING, List, Optional, Sequence, Union
 from ..enums import AppCommandOptionType, AppCommandType, Locale
 from ..errors import DiscordException, HTTPException, _flatten_error_dict
 from ..utils import _human_join
+
 __all__ = (
     'AppCommandError',
     'CommandInvokeError',
@@ -241,9 +242,8 @@ class MissingAnyRole(CheckFailure):
 
     def __init__(self, missing_roles: SnowflakeList) -> None:
         self.missing_roles: SnowflakeList = missing_roles
+
         fmt = _human_join([f"'{role}'" for role in missing_roles])
-
-
         message = f'You are missing at least one of the required roles: {fmt}'
         super().__init__(message)
 
@@ -264,6 +264,7 @@ class MissingPermissions(CheckFailure):
 
     def __init__(self, missing_permissions: List[str], *args: Any) -> None:
         self.missing_permissions: List[str] = missing_permissions
+
         missing = [perm.replace('_', ' ').replace('guild', 'server').title() for perm in missing_permissions]
         fmt = _human_join(missing, final='and')
         message = f'You are missing {fmt} permission(s) to run this command.'
@@ -516,8 +517,18 @@ class CommandSyncFailure(AppCommandError, HTTPException):
         messages = [f'Failed to upload commands to Discord (HTTP status {self.status}, error code {self.code})']
 
         if self._errors:
-            for index, inner in self._errors.items():
-                _get_command_error(index, inner, commands, messages)
+            # Handle case where the errors dict has no actual chain such as APPLICATION_COMMAND_TOO_LARGE
+            if len(self._errors) == 1 and '_errors' in self._errors:
+                errors = self._errors['_errors']
+                if len(errors) == 1:
+                    extra = errors[0].get('message')
+                    if extra:
+                        messages[0] += f': {extra}'
+                else:
+                    messages.extend(f'Error {e.get("code", "")}: {e.get("message", "")}' for e in errors)
+            else:
+                for index, inner in self._errors.items():
+                    _get_command_error(index, inner, commands, messages)
 
         # Equivalent to super().__init__(...) but skips other constructors
         self.args = ('\n'.join(messages),)

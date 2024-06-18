@@ -27,6 +27,7 @@ from typing_extensions import NotRequired, Required
 
 from .automod import AutoModerationAction, AutoModerationRuleTriggerType
 from .activity import PartialPresenceUpdate
+from .sku import Entitlement
 from .voice import GuildVoiceState
 from .integration import BaseIntegration, IntegrationApplication
 from .role import Role
@@ -36,7 +37,7 @@ from .invite import InviteTargetType
 from .emoji import Emoji, PartialEmoji
 from .member import MemberWithUser
 from .snowflake import Snowflake
-from .message import Message
+from .message import Message, ReactionType
 from .sticker import GuildSticker
 from .appinfo import GatewayAppInfo, PartialAppInfo
 from .guild import Guild, UnavailableGuild
@@ -103,6 +104,7 @@ class MessageReactionAddEvent(TypedDict):
     message_author_id: NotRequired[Snowflake]
     burst: bool
     burst_colors: NotRequired[List[str]]
+    type: ReactionType
 
 
 class MessageReactionRemoveEvent(TypedDict):
@@ -112,6 +114,7 @@ class MessageReactionRemoveEvent(TypedDict):
     emoji: PartialEmoji
     guild_id: NotRequired[Snowflake]
     burst: bool
+    type: ReactionType
 
 
 class MessageReactionRemoveAllEvent(TypedDict):
@@ -228,7 +231,7 @@ class GuildMemberUpdateEvent(TypedDict):
     pending: NotRequired[bool]
     communication_disabled_until: NotRequired[str]
     avatar_decoration_data: NotRequired[AvatarDecorationData]
-    
+
 
 class GuildEmojisUpdateEvent(TypedDict):
     guild_id: Snowflake
@@ -347,4 +350,15 @@ class AutoModerationActionExecution(TypedDict):
 
 
 class GuildAuditLogEntryCreate(AuditLogEntry):
-    guild_id: Snowflake 
+    guild_id: Snowflake
+
+
+EntitlementCreateEvent = EntitlementUpdateEvent = EntitlementDeleteEvent = Entitlement
+
+
+class PollVoteActionEvent(TypedDict):
+    user_id: Snowflake
+    channel_id: Snowflake
+    message_id: Snowflake
+    guild_id: NotRequired[Snowflake]
+    answer_id: int
