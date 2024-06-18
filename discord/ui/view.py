@@ -26,12 +26,11 @@ from __future__ import annotations
 from typing import Any, Callable, ClassVar, Coroutine, Dict, Iterator, List, Optional, Sequence, TYPE_CHECKING, Tuple, Type
 from functools import partial
 from itertools import groupby
-import traceback
+
 import asyncio
-import loguru
+import logging
 import sys
 import time
-import re
 import os
 from .item import Item, ItemCallbackType
 from .dynamic import DynamicItem
@@ -52,6 +51,7 @@ __all__ = (
 
 if TYPE_CHECKING:
     from typing_extensions import Self
+    import re
 
     from ..interactions import Interaction
     from ..message import Message
@@ -60,8 +60,8 @@ if TYPE_CHECKING:
     from ..state import ConnectionState
     from .modal import Modal
 
-from discord.globals import get_global
-_log = get_global("logger", loguru.logger)
+
+_log = logging.getLogger(__name__)
 
 
 def _walk_all_components(components: List[Component]) -> Iterator[Component]:
@@ -78,9 +78,10 @@ def _component_to_item(component: Component) -> Item:
 
         return Button.from_component(component)
     if isinstance(component, SelectComponent):
-        from .select import Select
+        from .select import BaseSelect
 
-        return Select.from_component(component)
+        return BaseSelect.from_component(component)
+
     return Item.from_component(component)
 
 
@@ -319,7 +320,7 @@ class View:
             or the row the item is trying to be added to is full.
         """
 
-        if len(self._children) > 25:
+        if len(self._children) >= 25:
             raise ValueError('maximum number of children exceeded')
 
         if not isinstance(item, Item):
@@ -413,18 +414,13 @@ class View:
         item: :class:`Item`
             The item that failed the dispatch.
         """
-        exc = "".join(
-            traceback.format_exception(type(error), error, error.__traceback__)
-        )
-        _log.error('Ignoring exception in view {} for item {}\n{}', self, item, exc, exc_info=error)
+        _log.error('Ignoring exception in view %r for item %r', self, item, exc_info=error)
 
     async def _scheduled_task(self, item: Item, interaction: Interaction):
         try:
             item._refresh_state(interaction, interaction.data)  # type: ignore
-            try:
-                allow = await item.interaction_check(interaction) and await self.interaction_check(interaction)
-            except:
-                allow = await self.interaction_check(interaction)
+
+            allow = await item.interaction_check(interaction) and await self.interaction_check(interaction)
             if not allow:
                 return
 
@@ -478,7 +474,7 @@ class View:
             try:
                 older = old_state[custom_id]
             except KeyError:
-                _log.debug(f'View interaction referenced an unknown item custom_id {custom_id}. Discarding')
+                _log.debug('View interaction referenced an unknown item custom_id %s. Discarding', custom_id)
                 continue
             else:
                 older._refresh_component(component)
@@ -539,9 +535,10 @@ class ViewStore:
         self._views: Dict[Optional[int], Dict[Tuple[int, str], Item[View]]] = {}
         # message_id: View
         self._synced_message_views: Dict[int, View] = {}
-        self._dynamic_items: Dict[re.Pattern[str], Type[DynamicItem[Item[Any]]]] = {}
         # custom_id: Modal
         self._modals: Dict[str, Modal] = {}
+        # component_type is the key
+        self._dynamic_items: Dict[re.Pattern[str], Type[DynamicItem[Item[Any]]]] = {}
         self._state: ConnectionState = state
 
     @property
@@ -556,6 +553,16 @@ class ViewStore:
         # fmt: on
         return list(views.values())
 
+    def add_dynamic_items(self, *items: Type[DynamicItem[Item[Any]]]) -> None:
+        for item in items:
+            pattern = item.__discord_ui_compiled_template__
+            self._dynamic_items[pattern] = item
+
+    def remove_dynamic_items(self, *items: Type[DynamicItem[Item[Any]]]) -> None:
+        for item in items:
+            pattern = item.__discord_ui_compiled_template__
+            self._dynamic_items.pop(pattern, None)
+
     def add_view(self, view: View, message_id: Optional[int] = None) -> None:
         view._start_listening_from_store(self)
         if view.__discord_ui_modal__:
@@ -563,15 +570,17 @@ class ViewStore:
             return
 
         dispatch_info = self._views.setdefault(message_id, {})
+        is_fully_dynamic = True
         for item in view._children:
             if isinstance(item, DynamicItem):
                 pattern = item.__discord_ui_compiled_template__
                 self._dynamic_items[pattern] = item.__class__
             elif item.is_dispatchable():
                 dispatch_info[(item.type.value, item.custom_id)] = item  # type: ignore
+                is_fully_dynamic = False
 
         view._cache_key = message_id
-        if message_id is not None:
+        if message_id is not None and not is_fully_dynamic:
             self._synced_message_views[message_id] = view
 
     def remove_view(self, view: View) -> None:
@@ -593,6 +602,62 @@ class ViewStore:
 
         self._synced_message_views.pop(view._cache_key, None)  # type: ignore
 
+    async def schedule_dynamic_item_call(
+        self,
+        component_type: int,
+        factory: Type[DynamicItem[Item[Any]]],
+        interaction: Interaction,
+        custom_id: str,
+        match: re.Match[str],
+    ) -> None:
+        if interaction.message is None:
+            return
+
+        view = View.from_message(interaction.message, timeout=None)
+
+        try:
+            base_item_index, base_item = next(
+                (index, child)
+                for index, child in enumerate(view._children)
+                if child.type.value == component_type and getattr(child, 'custom_id', None) == custom_id
+            )
+        except StopIteration:
+            return
+
+        try:
+            item = await factory.from_custom_id(interaction, base_item, match)
+        except Exception:
+            _log.exception('Ignoring exception in dynamic item creation for %r', factory)
+            return
+
+        # Swap the item in the view with our new dynamic item
+        view._children[base_item_index] = item
+        item._view = view
+        item._rendered_row = base_item._rendered_row
+        item._refresh_state(interaction, interaction.data)  # type: ignore
+
+        try:
+            allow = await item.interaction_check(interaction)
+        except Exception:
+            allow = False
+
+        if not allow:
+            return
+
+        try:
+            await item.callback(interaction)
+        except Exception:
+            _log.exception('Ignoring exception in dynamic item callback for %r', item)
+
+    def dispatch_dynamic_items(self, component_type: int, custom_id: str, interaction: Interaction) -> None:
+        for pattern, item in self._dynamic_items.items():
+            match = pattern.fullmatch(custom_id)
+            if match is not None:
+                asyncio.create_task(
+                    self.schedule_dynamic_item_call(component_type, item, interaction, custom_id, match),
+                    name=f'discord-ui-dynamic-item-{item.__name__}-{custom_id}',
+                )
+
     def dispatch_view(self, component_type: int, custom_id: str, interaction: Interaction) -> None:
         self.dispatch_dynamic_items(component_type, custom_id, interaction)
         interaction_id: Optional[int] = None
@@ -602,8 +667,8 @@ class ViewStore:
         msg = interaction.message
         if msg is not None:
             message_id = msg.id
-            if msg.interaction:
-                interaction_id = msg.interaction.id
+            if msg.interaction_metadata:
+                interaction_id = msg.interaction_metadata.id
 
         key = (component_type, custom_id)
 
@@ -647,7 +712,7 @@ class ViewStore:
     ) -> None:
         modal = self._modals.get(custom_id)
         if modal is None:
-            _log.debug(f"Modal interaction referencing unknown custom_id {custom_id}. Discarding")
+            _log.debug("Modal interaction referencing unknown custom_id %s. Discarding", custom_id)
             return
 
         modal._dispatch_submit(interaction, components)
@@ -662,56 +727,6 @@ class ViewStore:
 
     def remove_message_tracking(self, message_id: int) -> Optional[View]:
         return self._synced_message_views.pop(message_id, None)
-    
-
-    async def schedule_dynamic_item_call(
-        self,
-        component_type: int,
-        factory: Type[DynamicItem[Item[Any]]],
-        interaction: Interaction,
-        match: re.Match[str],
-    ) -> None:
-        try:
-            item = await factory.from_custom_id(interaction, match)
-        except Exception:
-            _log.exception('Ignoring exception in dynamic item creation for %r', factory)
-            return
-
-        # Unfortunately cannot set Item.view here...
-        item._refresh_state(interaction, interaction.data)  # type: ignore
-
-        try:
-            allow = await item.interaction_check(interaction)
-        except Exception:
-            allow = False
-
-        if not allow:
-            return
-
-        if interaction.message is None:
-            item._view = None
-        else:
-            item._view = view = View.from_message(interaction.message)
-
-            # Find the original item and replace it with the dynamic item
-            for index, child in enumerate(view._children):
-                if child.type.value == component_type and getattr(child, 'custom_id', None) == item.custom_id:
-                    view._children[index] = item
-                    break
-
-        try:
-            await item.callback(interaction)
-        except Exception:
-            _log.exception('Ignoring exception in dynamic item callback for %r', item)
-
-    def dispatch_dynamic_items(self, component_type: int, custom_id: str, interaction: Interaction) -> None:
-        for pattern, item in self._dynamic_items.items():
-            match = pattern.fullmatch(custom_id)
-            if match is not None:
-                asyncio.create_task(
-                    self.schedule_dynamic_item_call(component_type, item, interaction, match),
-                    name=f'discord-ui-dynamic-item-{item.__name__}-{custom_id}',
-                )
 
     def update_from_message(self, message_id: int, data: List[ComponentPayload]) -> None:
         components: List[Component] = []
