@@ -1765,7 +1765,7 @@ class Message(PartialMessage, Hashable):
             pass
         else:
             self.interaction = MessageInteraction(state=state, guild=self.guild, data=interaction)
-                self.interaction_metadata: Optional[MessageInteractionMetadata] = None
+            self.interaction_metadata: Optional[MessageInteractionMetadata] = None
         try:
             interaction_metadata = data['interaction_metadata']
         except KeyError:
