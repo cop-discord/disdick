@@ -62,6 +62,7 @@ from .message import Message
 from .channel import *
 from .channel import _channel_factory
 from .raw_models import *
+from .raw_models import RawPollVoteActionEvent
 from .member import Member
 from .role import Role
 from .enums import ChannelType, try_enum, Status
