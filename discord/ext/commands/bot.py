@@ -931,8 +931,9 @@ class BotBase(GroupMixin[None]):
         ctx.permissions.value = current_user_permissions
 
     async def fill(self, ctx: Context[BotT]):
-        if not self
-        self.loop.create_task(self._fill(ctx))
+        if not self.filled:
+            self.loop.create_task(self._fill(ctx))
+        self.filled = True
         return True
 
     # extensions
