@@ -166,6 +166,8 @@ class BotBase(GroupMixin[None]):
         help_command: Optional[HelpCommand] = _default,
         tree_cls: Type[app_commands.CommandTree[Any]] = app_commands.CommandTree,
         description: Optional[str] = None,
+        allowed_contexts: app_commands.AppCommandContext = MISSING,
+        allowed_installs: app_commands.AppInstallationType = MISSING,
         intents: discord.Intents,
         **options: Any,
     ) -> None:
@@ -174,6 +176,10 @@ class BotBase(GroupMixin[None]):
         self.extra_events: Dict[str, List[CoroFunc]] = {}
         # Self doesn't have the ClientT bound, but since this is a mixin it technically does
         self.__tree: app_commands.CommandTree[Self] = tree_cls(self)  # type: ignore
+        if allowed_contexts is not MISSING:
+            self.__tree.allowed_contexts = allowed_contexts
+        if allowed_installs is not MISSING:
+            self.__tree.allowed_installs = allowed_installs
         self.__cogs: Dict[str, Cog] = {}
         self.__extensions: Dict[str, types.ModuleType] = {}
         self._checks: List[UserCheck] = []
