@@ -58,6 +58,7 @@ from .mentions import AllowedMentions
 from . import __version__, utils
 from .utils import MISSING
 from .globals import get_global
+from .poll import Poll
 _log = get_global("logger", loguru.logger)
 
 if TYPE_CHECKING:
@@ -170,6 +171,7 @@ def handle_message_parameters(
     thread_name: str = MISSING,
     channel_payload: Dict[str, Any] = MISSING,
     applied_tags: Optional[SnowflakeList] = MISSING,
+    poll: Optional[Poll] = MISSING,
 ) -> MultipartParameters:
     if files is not MISSING and file is not MISSING:
         raise TypeError('Cannot mix file and files keyword arguments.')
@@ -272,6 +274,9 @@ def handle_message_parameters(
             'message': payload,
         }
         payload.update(channel_payload)
+
+    if poll not in (MISSING, None):
+        payload['poll'] = poll._to_dict()  # type: ignore
 
     multipart = []
     if files:

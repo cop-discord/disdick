@@ -64,6 +64,7 @@ from .mixins import Hashable
 from .sticker import StickerItem, GuildSticker
 from .threads import Thread
 from .channel import PartialMessageable
+from .poll import Poll
 
 if TYPE_CHECKING:
     from typing_extensions import Self
@@ -1712,6 +1713,7 @@ class Message(PartialMessage, Hashable):
         'interaction_metadata',
         'application_id',
         'position',
+        'poll',
     )
 
     if TYPE_CHECKING:
@@ -1797,6 +1799,11 @@ class Message(PartialMessage, Hashable):
 
                     # the channel will be the correct type here
                     ref.resolved = self.__class__(channel=chan, data=resolved, state=state)  # type: ignore
+        self.poll: Optional[Poll] = None
+        try:
+            self.poll = Poll._from_data(data=data['poll'], message=self, state=state)
+        except KeyError:
+            self.poll = state._get_poll(self.id)
 
         self.application: Optional[MessageApplication] = None
         try:
