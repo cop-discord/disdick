@@ -391,7 +391,7 @@ class Member(discord.abc.Messageable, _UserTag):
         data['user'] = author._to_minimal_user_json()  # type: ignore
         return cls(data=data, guild=message.guild, state=message._state)  # type: ignore
 
-        @classmethod
+    @classmethod
     def _from_client_user(cls, *, user: ClientUser, guild: Guild, state: ConnectionState) -> Self:
         data = {
             'roles': [],
