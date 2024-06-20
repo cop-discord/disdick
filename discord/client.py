@@ -903,7 +903,7 @@ class Client:
                 await self.start(token, reconnect=reconnect)
 
         if log_handler is not None:
-            utils.setup_loguru(
+            utils.setup_logging(
                 handler=log_handler,
                 formatter=log_formatter,
                 level=log_level,

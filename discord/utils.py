@@ -101,7 +101,7 @@ __all__ = (
     'as_chunks',
     'format_dt',
     'MISSING',
-    'setup_loguru',
+    'setup_logging',
 )
 
 DISCORD_EPOCH = 1420070400000
