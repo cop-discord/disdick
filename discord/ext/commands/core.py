@@ -416,7 +416,7 @@ class Command(_BaseCommand, Generic[CogT, P, T]):
         self.syntax: Optional[str] = kwargs.get('syntax')
         self.parameters: Dict[Any, Any] = kwargs.get('parameters', {})
         self.example: Optional[str] = kwargs.get('example')
-        self.cooldown_kwargs: Optional[Dict[Any, Any]] = kwargs.get("cooldown_args")
+        self.cooldown_args: Optional[Dict[Any, Any]] = kwargs.get("cooldown_args")
         if not isinstance(self.aliases, (list, tuple)):
             raise TypeError("Aliases of a command must be a list or a tuple of strings.")
 
