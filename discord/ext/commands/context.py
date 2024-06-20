@@ -506,7 +506,7 @@ class Context(discord.abc.Messageable, Generic[BotT]):
         .. versionadded:: 2.0
         """
         channel = self.channel
-        if channel.type == ChannelType.private:
+        if self.interaction is None and channel.type == ChannelType.private:
             return Permissions._dm_permissions()
         if not self.interaction:
             # channel and me will always match relevant types here
