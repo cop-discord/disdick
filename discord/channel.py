@@ -2942,11 +2942,11 @@ class DMChannel(discord.abc.Messageable, discord.abc.PrivateChannel, Hashable):
         The direct message channel ID.
     """
 
-    __slots__ = ('id', 'recipient', 'me', '_state')
+    __slots__ = ('id', 'recipients', 'me', '_state')
 
     def __init__(self, *, me: ClientUser, state: ConnectionState, data: DMChannelPayload):
         self._state: ConnectionState = state
-        self.recipient: Optional[User] = state.store_user(data['recipients'][0])
+        self.recipients: List[User] = [state.store_user(u) for u in data.get('recipients', [])]
         self.me: ClientUser = me
         self.id: int = int(data['id'])
 
@@ -2966,7 +2966,7 @@ class DMChannel(discord.abc.Messageable, discord.abc.PrivateChannel, Hashable):
         self = cls.__new__(cls)
         self._state = state
         self.id = channel_id
-        self.recipient = None
+        self.recipients = []
         # state.user won't be None here
         self.me = state.user  # type: ignore
         return self
@@ -2984,6 +2984,12 @@ class DMChannel(discord.abc.Messageable, discord.abc.PrivateChannel, Hashable):
 
         .. versionadded:: 2.0
         """
+        return None
+    
+    @property
+    def recipient(self) -> Optional[User]:
+        if self.recipients:
+            return self.recipients[0]
         return None
 
     @property
