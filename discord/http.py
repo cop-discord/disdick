@@ -47,7 +47,8 @@ from typing import (
 )
 from urllib.parse import quote as _uriquote
 from collections import deque
-import datetime,orjson
+import datetime
+import orjson
 from .expiringdictionary import ExpiringDictionary as Cache
 import aiohttp
 
@@ -58,12 +59,11 @@ from .mentions import AllowedMentions
 from . import __version__, utils
 from .utils import MISSING
 from .globals import get_global
-from .poll import Poll
 _log = get_global("logger", loguru.logger)
 
 if TYPE_CHECKING:
     from typing_extensions import Self
-
+    from .poll import Poll
     from .ui.view import View
     from .embeds import Embed
     from .message import Attachment
