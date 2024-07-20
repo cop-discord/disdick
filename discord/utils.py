@@ -1479,10 +1479,10 @@ def setup_logging(
             formatter = loguru.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
 
     if root:
-        logger = loguru.getLogger()
+        logger = loguru.logger
     else:
         library, _, _ = __name__.partition('.')
-        logger = loguru.getLogger(library)
+        logger = loguru.logger
 
     handler.setFormatter(formatter)
     logger.setLevel(level)
