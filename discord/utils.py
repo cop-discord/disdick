@@ -1464,7 +1464,7 @@ def setup_logging(
         Whether to set up the root logger rather than the library logger.
         Unlike the default for :class:`~discord.Client`, this defaults to ``True``.
     """
-
+    loguru.logger.remove()
     if level is MISSING:
         level = loguru.INFO
 
