@@ -1482,7 +1482,7 @@ def setup_logging(
         library, _, _ = __name__.partition('.')
 
     handler.setFormatter(formatter)
-    logger.setLevel(level)
+    logger.add("discord", level = "INFO", format = formatter)
     logger.addHandler(handler)
 
 
