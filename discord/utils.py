@@ -1435,6 +1435,7 @@ class _ColourFormatter(loguru.Formatter):
 
 
 def setup_logging(handler=None, level='INFO'):
+    loguru_logger.remove()
     if handler is None:
         handler = sys.stdout
 
