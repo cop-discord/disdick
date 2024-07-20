@@ -22,7 +22,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
-
+from loguru import logger
 import array
 import asyncio
 from textwrap import TextWrapper
@@ -1464,7 +1464,7 @@ def setup_logging(
         Whether to set up the root logger rather than the library logger.
         Unlike the default for :class:`~discord.Client`, this defaults to ``True``.
     """
-    loguru.logger.remove()
+    logger.remove()
     if level is MISSING:
         level = loguru.INFO
 
@@ -1478,11 +1478,8 @@ def setup_logging(
             dt_fmt = '%Y-%m-%d %H:%M:%S'
             formatter = loguru.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
 
-    if root:
-        logger = loguru.logger
-    else:
+    if not root:
         library, _, _ = __name__.partition('.')
-        logger = loguru.logger
 
     handler.setFormatter(formatter)
     logger.setLevel(level)
