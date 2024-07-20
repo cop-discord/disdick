@@ -1434,17 +1434,17 @@ class _ColourFormatter(loguru.Formatter):
 
 
 
-def setup_logging(handler=None, level='INFO'):
+def setup_logging(handler=None, format: Optional[str] = None, level='INFO'):
     loguru_logger.remove()
     if handler is None:
         handler = sys.stdout
 
     if stream_supports_colour(handler):
         # Colorized output for terminals supporting color
-        loguru_logger.add(handler, format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | <cyan>{name}</cyan>: {message}", level=level)
+        loguru_logger.add(handler, format= format or "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | <cyan>{name}</cyan>: {message}", level=level)
     else:
         # Non-colorized output (default)
-        loguru_logger.add(handler, format="{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}: {message}", level=level)
+        loguru_logger.add(handler, format=format or "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}: {message}", level=level)
 
 
 def _shorten(
