@@ -22,7 +22,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 """
 from __future__ import annotations
-
+from loguru import logger as loguru_logger
+import loguru
+import logging
 import array
 import asyncio
 from textwrap import TextWrapper
@@ -1430,63 +1432,19 @@ class _ColourFormatter(loguru.Formatter):
         return output
 
 
-def setup_logging(
-    *,
-    handler: loguru.Handler = MISSING,
-    formatter: loguru.Formatter = MISSING,
-    level: int = MISSING,
-    root: bool = True,
-) -> None:
-    """A helper function to setup loguru.
 
-    This is superficially similar to :func:`loguru.basicConfig` but
-    uses different defaults and a colour formatter if the stream can
-    display colour.
 
-    This is used by the :class:`~discord.Client` to set up loguru
-    if ``log_handler`` is not ``None``.
+def setup_logging(handler=None, format: Optional[str] = None, level='INFO'):
+    loguru_logger.remove()
+    if handler is None:
+        handler = sys.stdout
 
-    .. versionadded:: 2.0
-
-    Parameters
-    -----------
-    handler: :class:`loguru.Handler`
-        The log handler to use for the library's logger.
-
-        The default log handler if not provided is :class:`loguru.StreamHandler`.
-    formatter: :class:`loguru.Formatter`
-        The formatter to use with the given log handler. If not provided then it
-        defaults to a colour based loguru formatter (if available). If colour
-        is not available then a simple loguru formatter is provided.
-    level: :class:`int`
-        The default log level for the library's logger. Defaults to ``loguru.INFO``.
-    root: :class:`bool`
-        Whether to set up the root logger rather than the library logger.
-        Unlike the default for :class:`~discord.Client`, this defaults to ``True``.
-    """
-
-    if level is MISSING:
-        level = loguru.INFO
-
-    if handler is MISSING:
-        handler = loguru.StreamHandler()
-
-    if formatter is MISSING:
-        if isinstance(handler, loguru.StreamHandler) and stream_supports_colour(handler.stream):
-            formatter = _ColourFormatter()
-        else:
-            dt_fmt = '%Y-%m-%d %H:%M:%S'
-            formatter = loguru.Formatter('[{asctime}] [{levelname:<8}] {name}: {message}', dt_fmt, style='{')
-
-    if root:
-        logger = loguru.getLogger()
+    if stream_supports_colour(handler):
+        # Colorized output for terminals supporting color
+        loguru_logger.add(handler, format= format or "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level}</level> | <cyan>{name}</cyan>: {message}", level=level)
     else:
-        library, _, _ = __name__.partition('.')
-        logger = loguru.getLogger(library)
-
-    handler.setFormatter(formatter)
-    logger.setLevel(level)
-    logger.addHandler(handler)
+        # Non-colorized output (default)
+        loguru_logger.add(handler, format=format or "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}: {message}", level=level)
 
 
 def _shorten(
