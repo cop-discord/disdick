@@ -836,8 +836,8 @@ class Client:
         token: str,
         *,
         reconnect: bool = True,
-        log_handler: Optional[loguru.Handler] = MISSING,
-        log_formatter: loguru.Formatter = MISSING,
+        log_handler = MISSING,
+        log_formatter: str = MISSING,
         log_level: int = MISSING,
         root_logger: bool = False,
     ) -> None:
@@ -903,12 +903,7 @@ class Client:
                 await self.start(token, reconnect=reconnect)
 
         if log_handler is not None:
-            utils.setup_logging(
-                handler=log_handler,
-                formatter=log_formatter,
-                level=log_level,
-                root=root_logger,
-            )
+            utils.setup_logging()
 
         try:
             asyncio.run(runner())
