@@ -2576,3 +2576,55 @@ class HTTPClient:
 
     def get_user(self, user_id: Snowflake) -> Response[user.User]:
         return self.request(Route('GET', '/users/{user_id}', user_id=user_id))
+
+
+    def get_application_emojis(self, application_id: Snowflake) -> Response[appinfo.ListAppEmojis]:
+        return self.request(Route('GET', '/applications/{application_id}/emojis', application_id=application_id))
+
+    def get_application_emoji(self, application_id: Snowflake, emoji_id: Snowflake) -> Response[emoji.Emoji]:
+        return self.request(
+            Route(
+                'GET', '/applications/{application_id}/emojis/{emoji_id}', application_id=application_id, emoji_id=emoji_id
+            )
+        )
+
+    def create_application_emoji(
+        self,
+        application_id: Snowflake,
+        name: str,
+        image: str,
+    ) -> Response[emoji.Emoji]:
+        payload = {
+            'name': name,
+            'image': image,
+        }
+
+        return self.request(
+            Route('POST', '/applications/{application_id}/emojis', application_id=application_id), json=payload
+        )
+
+    def edit_application_emoji(
+        self,
+        application_id: Snowflake,
+        emoji_id: Snowflake,
+        *,
+        payload: Dict[str, Any],
+    ) -> Response[emoji.Emoji]:
+        r = Route(
+            'PATCH', '/applications/{application_id}/emojis/{emoji_id}', application_id=application_id, emoji_id=emoji_id
+        )
+        return self.request(r, json=payload)
+
+    def delete_application_emoji(
+        self,
+        application_id: Snowflake,
+        emoji_id: Snowflake,
+    ) -> Response[None]:
+        return self.request(
+            Route(
+                'DELETE',
+                '/applications/{application_id}/emojis/{emoji_id}',
+                application_id=application_id,
+                emoji_id=emoji_id,
+            )
+        )
