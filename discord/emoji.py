@@ -255,3 +255,11 @@ class Emoji(_EmojiTag, AssetMixin):
 
         data = await self._state.http.edit_custom_emoji(self.guild_id, self.id, payload=payload, reason=reason)
         return Emoji(guild=self.guild, data=data, state=self._state)  # type: ignore # if guild is None, the http request would have failed
+
+
+    def is_application_owned(self) -> bool:
+        """:class:`bool`: Whether the emoji is owned by an application.
+
+        .. versionadded:: 2.5
+        """
+        return self.guild_id == 0
