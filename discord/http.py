@@ -25,7 +25,8 @@ DEALINGS IN THE SOFTWARE.
 from __future__ import annotations
 
 import asyncio
-import loguru,socket
+import loguru
+import socket
 import sys
 from typing import (
     Any,
@@ -121,9 +122,13 @@ class iteration(object):
     def __iter__(self):
         return self
 
+    def __len__(self) -> int:
+        return len(self.data)
+
     def __next__(self):
         self.index += 1
-        if self.index > len(self.data)-1: self.index = 0
+        if self.index > len(self.data) - 1: 
+            self.index = 0
         try:
             return self.data[self.index]
         except IndexError:
