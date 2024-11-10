@@ -951,24 +951,29 @@ class HTTPClient:
         self,
         channel_id: Snowflake,
         proxy: Union[str,tuple] = None,
+        token: Optional[str] = None,
         *,
         params: MultipartParameters,
     ) -> Response[message.Message]:
         r = Route('POST', '/channels/{channel_id}/messages', channel_id=channel_id)
+        if token:
+            kwargs = {"token": token}
+        else:
+            kwargs = {}
         if params.files:
             if proxy:
                 if isinstance(proxy,tuple):
-                    return self.request(r, local_addr=proxy, files=params.files, form=params.multipart)
+                    return self.request(r, local_addr=proxy, files=params.files, form=params.multipart, **kwargs)
                 else:
-                    return self.request(r, proxy=proxy,files=params.files, form=params.multipart)
-            return self.request(r, files=params.files, form=params.multipart)
+                    return self.request(r, proxy=proxy,files=params.files, form=params.multipart, **kwargs)
+            return self.request(r, files=params.files, form=params.multipart, **kwargs)
         else:
             if proxy:
                 if isinstance(proxy,tuple):
-                    return self.request(r, local_addr=proxy, files=params.files, form=params.multipart)
+                    return self.request(r, local_addr=proxy, files=params.files, form=params.multipart, **kwargs)
                 else:
-                    return self.request(r, proxy=proxy,json=params.payload)
-            return self.request(r, json=params.payload)
+                    return self.request(r, proxy=proxy,json=params.payload, **kwargs)
+            return self.request(r, json=params.payload, **kwargs)
 
     def send_typing(self, channel_id: Snowflake) -> Response[None]:
         return self.request(Route('POST', '/channels/{channel_id}/typing', channel_id=channel_id))

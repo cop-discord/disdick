@@ -1423,6 +1423,7 @@ class Messageable:
         view: Optional[View] = None,
         suppress_embeds: bool = False,
         silent: bool = False,
+        **kwargs
     ) -> Message:
         """|coro|
 
@@ -1579,7 +1580,7 @@ class Messageable:
             view=view,
             flags=flags,
         ) as params:
-            data = await state.http.send_message(channel.id, params=params)
+            data = await state.http.send_message(channel.id, params=params, **kwargs)
 
         ret = state.create_message(channel=channel, data=data)
         if view and not view.is_finished():
