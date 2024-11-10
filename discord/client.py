@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 """
 
 from __future__ import annotations
+import os
 from collections import deque
 import asyncio
 import datetime
@@ -124,7 +125,9 @@ __all__ = (
     'Client',
 )
 # fmt: on
-
+if os.name == "nt":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    
 T = TypeVar('T')
 Coro = Coroutine[Any, Any, T]
 CoroT = TypeVar('CoroT', bound=Callable[..., Coro[Any]])
