@@ -215,7 +215,7 @@ class KeepAliveHandler(threading.Thread):
         self._last_ack = ack_time
         self.latency = ack_time - self._last_send
         if self.latency > 10:
-            _log.warning(self.behind_msg % self.shard_id, self.latency)
+            _log.warning(f"Can't keep up, shard ID {self.shard_id} websocket is {self.latency:.1f}s behind.")
 
 
 class VoiceKeepAliveHandler(KeepAliveHandler):
