@@ -1,29 +1,29 @@
-disfart
+disdick
 ==========
 
-.. image:: https://discord.com/api/guilds/336642139381301249/embed.png
+.. image:: https://discord.com/api/guilds/1054447513794515146/embed.png
    :target: https://discord.gg/r3sSKJJ
    :alt: Discord server invite
-.. image:: https://img.shields.io/pypi/v/discord.py.svg
-   :target: https://pypi.python.org/pypi/discord.py
+.. image:: https://img.shields.io/pypi/v/disdick.svg
+   :target: https://pypi.python.org/pypi/disdick
    :alt: PyPI version info
-.. image:: https://img.shields.io/pypi/pyversions/discord.py.svg
-   :target: https://pypi.python.org/pypi/discord.py
+.. image:: https://img.shields.io/pypi/pyversions/disdick.svg
+   :target: https://pypi.python.org/pypi/disdick
    :alt: PyPI supported Python versions
 
-A modern, easy to use, feature-rich, and async ready API wrapper for Discord written in Python.
+A discord.py fork focused on scalability and efficiency, fixing exploitable issues, implementing caching for invalid user IDs, ratelimiting, and more features.
 
 Key Features
 -------------
 
-- Modern Pythonic API using ``async`` and ``await``.
-- Proper rate limit handling.
-- Optimised in both speed and memory.
-- Proper Invalid Checking, Unlike discord.py, Invalid Ratelimiting to Prevent a cloudflare ban, and proxy optional arguments for some api calls that are heavy.
-- Limitation of Direct Messages to Prevent your Bot from being flagged
-- Smart Unbanning via guild.smart_unban()
-- Improved Speed and Lessened Thread usage
-- Clustering Support With IPC handling in the library
+- Modern Pythonic API with ``async`` and ``await``.
+- Robust rate limit handling.
+- Optimized for speed and memory efficiency.
+- Enhanced invalid checking and rate limiting to prevent Cloudflare bans, with optional proxy arguments for heavy API calls.
+- Direct message limitations to avoid bot flagging.
+- Smart unbanning via ``guild.smart_unban()``.
+- Improved speed and reduced thread usage.
+- Clustering support with built-in IPC handling.
 
 Installing
 ----------
@@ -35,10 +35,10 @@ To install the library without full voice support, you can just run the followin
 .. code:: sh
 
     # Linux/macOS
-    python3 -m pip install -U git+https://github.com/cop-discord/disfart
+    python3 -m pip install -U git+https://github.com/cop-discord/disdick
 
     # Windows
-    py -3 -m pip install -U git+https://github.com/cop-discord/disfart
+    py -3 -m pip install -U git+https://github.com/cop-discord/disdick
 
 Otherwise to get voice support you should run the following command:
 
@@ -47,8 +47,8 @@ To install the development version, do the following:
 
 .. code:: sh
 
-    $ git clone https://github.com/cop-discord/disfart
-    $ cd disfart
+    $ git clone https://github.com/cop-discord/disdick
+    $ cd disdick
     $ python3 -m pip install -U .[voice]
 
 
