@@ -284,8 +284,10 @@ def parse_time(timestamp: Optional[str]) -> Optional[datetime.datetime]:
     ...
 
 
-def parse_time(timestamp: Optional[str]) -> Optional[datetime.datetime]:
+def parse_time(timestamp: Optional[Union[str, float, int]]) -> Optional[datetime.datetime]:
     if timestamp:
+        if isinstance(timestamp, (int, float)):
+            return datetime.datetime.fromtimestamp(timestamp)
         return datetime.datetime.fromisoformat(timestamp)
     return None
 
