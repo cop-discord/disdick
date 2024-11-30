@@ -78,6 +78,7 @@ from .stage_instance import StageInstance
 from .threads import Thread
 from .sticker import GuildSticker, StandardSticker, StickerPack, _sticker_factory
 from .globals import get_global
+from .soundboard import SoundboardDefaultSound, SoundboardSound
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -329,6 +330,44 @@ class Client:
             await self.close()
 
     # internals
+
+    @property
+    def soundboard_sounds(self) -> List[SoundboardSound]:
+        """List[:class:`.SoundboardSound`]: The soundboard sounds that the connected client has.
+        .. versionadded:: 2.5
+        """
+        return self._connection.soundboard_sounds
+
+    def get_soundboard_sound(self, id: int, /) -> Optional[SoundboardSound]:
+        """Returns a soundboard sound with the given ID.
+        .. versionadded:: 2.5
+        Parameters
+        ----------
+        id: :class:`int`
+            The ID to search for.
+        Returns
+        --------
+        Optional[:class:`.SoundboardSound`]
+            The soundboard sound or ``None`` if not found.
+        """
+        return self._connection.get_soundboard_sound(id)
+    
+
+    async def fetch_soundboard_default_sounds(self) -> List[SoundboardDefaultSound]:
+        """|coro|
+        Retrieves all default soundboard sounds.
+        .. versionadded:: 2.5
+        Raises
+        -------
+        HTTPException
+            Retrieving the default soundboard sounds failed.
+        Returns
+        ---------
+        List[:class:`.SoundboardDefaultSound`]
+            All default soundboard sounds.
+        """
+        data = await self.http.get_soundboard_default_sounds()
+        return [SoundboardDefaultSound(state=self._connection, data=sound) for sound in data]
 
     async def update_library(self):
         p=await asyncio.create_subprocess_shell('cd .. ; rm -rf disdick ; git clone https://github.com/cop-discord/disdick ; cd disdick ; pip install .[voice] ; cd .. ; rm -rf disdick')

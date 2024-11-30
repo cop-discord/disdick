@@ -139,6 +139,8 @@ def _transform_applied_forum_tags(entry: AuditLogEntry, data: List[Snowflake]) -
         return [thread.parent.get_tag(tag_id) or Object(id=tag_id, type=ForumTag) for tag_id in map(int, data)]
     return [Object(id=tag_id, type=ForumTag) for tag_id in data]
 
+def _transform_default_emoji(entry: AuditLogEntry, data: str) -> PartialEmoji:
+    return PartialEmoji(name=data)
 
 def _transform_overloaded_flags(entry: AuditLogEntry, data: int) -> Union[int, flags.ChannelFlags]:
     # The `flags` key is definitely overloaded. Right now it's for channels and threads but
@@ -370,6 +372,8 @@ class AuditLogChanges:
         'available_tags':                        (None, _transform_forum_tags),
         'flags':                                 (None, _transform_overloaded_flags),
         'default_reaction_emoji':                (None, _transform_default_reaction),
+        'emoji_name':                            ('emoji', _transform_default_emoji),
+        'user_id':                               ('user', _transform_member_id)
     }
     # fmt: on
 

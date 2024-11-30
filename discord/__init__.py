@@ -44,7 +44,6 @@ from .integrations import *
 from .invite import *
 from .template import *
 from .welcome_screen import *
-from .soundboard import *
 from .widget import *
 from .object import *
 from .reaction import *
@@ -75,6 +74,7 @@ from .threads import *
 from .automod import *
 from .pool import *
 from .globals import *
+from .soundboard import *
 
 class VersionInfo(NamedTuple):
     major: int
