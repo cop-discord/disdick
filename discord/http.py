@@ -57,7 +57,7 @@ from .errors import HTTPException, RateLimited, Forbidden, NotFound, LoginFailur
 from .gateway import DiscordClientWebSocketResponse
 from .file import File
 from .mentions import AllowedMentions
-from . import __version__, utils, soundboard
+from . import __version__, utils
 from .utils import MISSING
 from .globals import get_global
 _log = get_global("logger", loguru.logger)
@@ -92,6 +92,7 @@ if TYPE_CHECKING:
         scheduled_event,
         sticker,
         welcome_screen,
+        soundboard,
     )
     from .types.snowflake import Snowflake, SnowflakeList
 
