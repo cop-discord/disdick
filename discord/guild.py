@@ -325,6 +325,7 @@ class Guild(Hashable):
         'premium_progress_bar_enabled',
         'max_stage_video_users',
         '_safety_alerts_channel_id',
+        '_soundboard_sounds',
     )
 
     _PREMIUM_GUILD_LIMITS: ClassVar[Dict[Optional[int], _GuildLimit]] = {
