@@ -799,6 +799,7 @@ class Client:
                     if exc.code == 4014:
                         raise PrivilegedIntentsRequired(exc.shard_id) from None
                     if exc.code != 1000:
+                        _log.debug(f"closing due to {exc.code} {exc}")
                         await self.close()
                         raise
 

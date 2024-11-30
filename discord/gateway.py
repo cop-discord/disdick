@@ -555,6 +555,7 @@ class DiscordWebSocket:
 
             if op == self.INVALIDATE_SESSION:
                 if data is True:
+                    _log.debug(f"received {op}")
                     await self.close()
                     raise ReconnectWebSocket(self.shard_id)
 
@@ -621,7 +622,10 @@ class DiscordWebSocket:
 
     def _can_handle_close(self) -> bool:
         code = self._close_code or self.socket.close_code
-        return code not in (1000, 4004, 4010, 4011, 4012, 4013, 4014)
+                # If the socket is closed remotely with 1000 and it's not our own explicit close
+        # then it's an improper close that should be handled and reconnected
+        is_improper_close = self._close_code is None and self.socket.close_code == 1000
+        return is_improper_close or code not in (1000, 4004, 4010, 4011, 4012, 4013, 4014)
 
     async def poll_event(self) -> None:
         """Polls for a DISPATCH event and handles the general gateway loop.
@@ -767,6 +771,7 @@ class DiscordWebSocket:
         await self.send_as_json(payload)
 
     async def close(self, code: int = 4000) -> None:
+        _log.debug(f"closing due to code {code}")
         if self._keep_alive:
             self._keep_alive.stop()
             self._keep_alive = None
@@ -1028,6 +1033,7 @@ class DiscordVoiceWebSocket:
             raise ConnectionClosed(self.ws, shard_id=None, code=self._close_code)
 
     async def close(self, code: int = 1000) -> None:
+        _log.debug(f"closing due to {code}")
         if self._keep_alive is not None:
             self._keep_alive.stop()
 
